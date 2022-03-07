@@ -1,0 +1,18 @@
+{
+    "drivers": [
+        {
+            "type": "MySQL",
+            "version": 8,
+            "driver": "com.mysql.cj.jdbc.Driver",
+            "url": "jdbc:mysql://{HOST}:{PORT}/{DATABASE}",
+            "statements": "database/database-mysql.xml"
+        },
+        {
+            "type": "MySQL",
+            "version": 5,
+            "driver": "com.mysql.jdbc.Driver",
+            "url": "jdbc:mysql://{HOST}:{PORT}/{DATABASE}",
+            "statements": "database/database-mysql.xml"
+        }
+    ]
+}
