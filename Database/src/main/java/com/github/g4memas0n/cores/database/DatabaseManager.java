@@ -237,11 +237,15 @@ public abstract class DatabaseManager {
         Preconditions.checkState(this.source != null, "Not connected to a database");
 
         try {
-            if (connection.isClosed() || connection.equals(this.transactions.get(id))) {
-                return;
-            }
+            if (!connection.isClosed()) {
+                for (final Connection transaction : this.transactions.values()) {
+                    if (connection.equals(transaction)) {
+                        return;
+                    }
+                }
 
-            connection.close();
+                connection.close();
+            }
         } catch (SQLException ex) {
             getLogger().log(Level.WARNING, "Failed to close fetched connection to database", ex);
         }
