@@ -39,7 +39,7 @@ public class XmlStatementLoaderTest {
         }
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test(expected = IllegalStateException.class)
     public void loadStatementPreconditionTest() {
         final XmlStatementLoader loader = new XmlStatementLoader();
 

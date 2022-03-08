@@ -43,7 +43,7 @@ public class JsonDriverLoaderTest {
         }
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test(expected = IllegalStateException.class)
     public void loadDriverPreconditionTest() {
         final JsonDriverLoader loader = new JsonDriverLoader();
 

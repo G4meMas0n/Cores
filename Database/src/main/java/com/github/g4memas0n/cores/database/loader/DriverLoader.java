@@ -11,10 +11,24 @@ public abstract class DriverLoader {
 
     protected DriverLoader() { }
 
+    /**
+     * Loads the driver file specified by the given input stream and tries to parse it according to actual driver
+     * loader.
+     * @param file the {@link InputStream} to read the driver file.
+     * @throws IOException Thrown when the specified input stream cannot be parsed.
+     */
     public abstract void load(@NotNull final InputStream file) throws IOException;
 
+    /**
+     * Gets all available drivers in the loaded driver file supporting the specified database type.
+     * @param type the type that the driver should support.
+     * @return a list of {@link Driver} that supports the specified database type.
+     */
     public abstract @NotNull List<Driver> get(@NotNull final String type);
 
+    /**
+     * A class representing a database driver.
+     */
     public record Driver(@NotNull String type, int version,
                          @Nullable String driverClass, @Nullable String dataSourceClass,
                          @Nullable String statements, @NotNull String url) implements Comparable<Driver> {

@@ -99,7 +99,7 @@ public class XmlStatementLoader extends StatementLoader {
 
     @Override
     protected @Nullable String load(@NotNull final String identifier) {
-        Preconditions.checkNotNull(this.root, "Cannot be invoked before #load(InputStream)");
+        Preconditions.checkState(this.root != null, "The statements file has not been loaded yet");
         final String[] parts = identifier.split("\\.", 2);
 
         if (parts.length > 1) {

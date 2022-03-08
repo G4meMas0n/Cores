@@ -50,7 +50,7 @@ public class JsonDriverLoader extends DriverLoader {
 
     @Override
     public @NotNull List<Driver> get(@NotNull final String type) {
-        Preconditions.checkNotNull(this.drivers, "Cannot be invoked before #load(InputStream)");
+        Preconditions.checkState(this.drivers != null, "The driver file has not been loaded yet");
         final Iterator<JsonElement> iterator = this.drivers.iterator();
         final List<Driver> results = new ArrayList<>();
 
