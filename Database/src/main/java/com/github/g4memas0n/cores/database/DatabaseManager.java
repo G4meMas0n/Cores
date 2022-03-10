@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -229,9 +230,33 @@ public abstract class DatabaseManager {
     }
 
     /**
+     * Closes the specified {@link Statement} and the specified {@link Connection} to the database, when the connection
+     * is not currently involved in a transaction. The specified {@link Statement} gets closed regardless of a
+     * transaction exists or not.
+     * @param connection the {@link Connection} that should be closed.
+     * @param statement the {@link Statement} that should be closed.
+     * @throws IllegalStateException Thrown when this {@code DatabaseManager} is not connected to any database.
+     * @see DatabaseManager#close(Connection)
+     */
+    public final void close(@NotNull final Connection connection, @NotNull final Statement statement) {
+        Preconditions.checkState(this.source != null, "Not connected to a database");
+
+        try {
+            if (!statement.isClosed()) {
+                statement.close();
+            }
+
+            this.close(connection);
+        } catch (SQLException ex) {
+            getLogger().log(Level.WARNING, "Failed to close statement of fetched connection to database", ex);
+        }
+    }
+
+    /**
      * Closes the specified {@link Connection} to the database, when it is not currently involved in a transaction.
      * @param connection the {@link Connection} that should be closed.
      * @throws IllegalStateException Thrown when this {@code DatabaseManager} is not connected to any database.
+     * @see DatabaseManager#close(Connection, Statement)
      */
     public final void close(@NotNull final Connection connection) {
         Preconditions.checkState(this.source != null, "Not connected to a database");
