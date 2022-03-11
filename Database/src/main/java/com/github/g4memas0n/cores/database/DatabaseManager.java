@@ -234,15 +234,15 @@ public abstract class DatabaseManager {
      * is not currently involved in a transaction. The specified {@link Statement} gets closed regardless of a
      * transaction exists or not.
      * @param connection the {@link Connection} that should be closed.
-     * @param statement the {@link Statement} that should be closed.
+     * @param statement the {@link Statement} that should be closed, or null.
      * @throws IllegalStateException Thrown when this {@code DatabaseManager} is not connected to any database.
      * @see DatabaseManager#close(Connection)
      */
-    public final void close(@NotNull final Connection connection, @NotNull final Statement statement) {
+    public final void close(@NotNull final Connection connection, @Nullable final Statement statement) {
         Preconditions.checkState(this.source != null, "Not connected to a database");
 
         try {
-            if (!statement.isClosed()) {
+            if (statement != null && !statement.isClosed()) {
                 statement.close();
             }
 
@@ -335,6 +335,15 @@ public abstract class DatabaseManager {
         } catch (SQLException ex) {
             getLogger().log(Level.WARNING, "Failed to end transaction on fetched connection to database", ex);
         }
+    }
+
+    /**
+     * Returns whether the current thread is currently involved in a database transaction.
+     * @return {@code true}, if the current thread is involved in a transaction, {@code false}, if not.
+     */
+    public final boolean transaction() {
+        Preconditions.checkState(this.source != null, "Not connected to a database");
+        return this.transactions.containsKey(Thread.currentThread().getId());
     }
 
     /**
