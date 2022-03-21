@@ -1,0 +1,6 @@
+{
+    "queries": {
+        "query.0": "FIRST SQL QUERY",
+        "query.1": "SECOND SQL QUERY"
+    }
+}

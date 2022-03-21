@@ -3,8 +3,7 @@ package com.github.g4memas0n.cores.database;
 import com.github.g4memas0n.cores.database.loader.DriverLoader;
 import com.github.g4memas0n.cores.database.loader.DriverLoader.Driver;
 import com.github.g4memas0n.cores.database.loader.JsonDriverLoader;
-import com.github.g4memas0n.cores.database.loader.StatementLoader;
-import com.github.g4memas0n.cores.database.loader.XmlStatementLoader;
+import com.github.g4memas0n.cores.database.loader.QueryLoader;
 import com.google.common.base.Preconditions;
 import com.zaxxer.hikari.HikariDataSource;
 import org.jetbrains.annotations.NotNull;
@@ -26,7 +25,7 @@ public abstract class DatabaseManager {
 
     private final Map<Long, Connection> transactions;
     private HikariDataSource source;
-    private StatementLoader statements;
+    private QueryLoader queries;
     private Driver driver;
 
     public DatabaseManager() {
@@ -48,22 +47,22 @@ public abstract class DatabaseManager {
     protected abstract @Nullable InputStream getResource(@NotNull final String path);
 
     /**
-     * Returns the statement of the specified {@code identifier} from the loaded statements file.
-     * @param identifier the {@code identifier} that identifies the statement to get.
-     * @return the statement with the specified {@code identifier}.
-     * @throws IllegalStateException Thrown when no statements file for the current driver loaded.
+     * Returns the query of the specified {@code identifier} from the loaded queries file.
+     * @param identifier the {@code identifier} that identifies the query to get.
+     * @return the query with the specified {@code identifier}.
+     * @throws IllegalStateException Thrown when no queries file for the current driver loaded.
      * @throws IllegalArgumentException Thrown when the specified identifier is blank.
      */
-    public @NotNull String getStatement(@NotNull final String identifier) {
-        Preconditions.checkState(this.statements != null, "The statement loader is not available");
-        Preconditions.checkArgument(!identifier.isBlank(), "The statement identifier cannot be blank");
+    public @NotNull String getQuery(@NotNull final String identifier) {
+        Preconditions.checkState(this.queries != null, "The query loader is not available");
+        Preconditions.checkArgument(!identifier.isBlank(), "The query identifier cannot be blank");
 
-        return this.statements.get(identifier);
+        return this.queries.getQuery(identifier);
     }
 
     /**
-     * Tries to load the specified {@link Driver Driver} and its associated statements file, if it exists.
-     * This {@code DatabaseManager} will locate the path of the statements file using the method
+     * Tries to load the specified {@link Driver Driver} and its associated queries file, if it exists.
+     * This {@code DatabaseManager} will locate the path of the queries file using the method
      * {@link DatabaseManager#getResource(String)}.
      * @param driver the {@link Driver Driver} to load to.
      * @return {@code true}, if the specified driver has been successfully loaded.
@@ -79,18 +78,11 @@ public abstract class DatabaseManager {
         try {
             Class.forName(driver.dataSourceClass() != null ? driver.dataSourceClass() : driver.driverClass());
 
-            if (driver.statements() != null && driver.statements().endsWith(".xml")) {
-                final StatementLoader statements = new XmlStatementLoader();
-                final InputStream stream = this.getResource(driver.statements());
-
-                if (stream != null) {
-                    try {
-                        statements.load(stream);
-                    } catch (IOException ex) {
-                        getLogger().log(Level.WARNING, "Failed to load statements file for driver " + driver, ex);
-                    }
-
-                    this.statements = statements;
+            if (driver.statements() != null) {
+                try {
+                    this.queries = QueryLoader.loadFile(driver.statements());
+                } catch (IllegalArgumentException ex) {
+                    getLogger().log(Level.WARNING, "Failed to load queries file for driver " + driver, ex);
                 }
             }
 
