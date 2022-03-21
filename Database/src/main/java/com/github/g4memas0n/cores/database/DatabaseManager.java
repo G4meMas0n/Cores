@@ -206,10 +206,22 @@ public abstract class DatabaseManager {
      * thread is involved in a transaction.
      * @return the fetched {@link Connection} to the database.
      * @throws IllegalStateException Thrown when this {@code DatabaseManager} is not connected to any database.
+     * @see DatabaseManager#open(long)
      */
     public final @Nullable Connection open() {
         Preconditions.checkState(this.source != null, "Not connected to a database");
-        final long id = Thread.currentThread().getId();
+        return this.open(Thread.currentThread().getId());
+    }
+
+    /**
+     * Opens a new {@link Connection} to the database or fetches the existing {@link Connection} when the thread with
+     * the specified {@code id} is involved in a transaction.
+     * @return the fetched {@link Connection} to the database.
+     * @throws IllegalStateException Thrown when this {@code DatabaseManager} is not connected to any database.
+     * @see DatabaseManager#open()
+     */
+    public final @Nullable Connection open(final long id) {
+        Preconditions.checkState(this.source != null, "Not connected to a database");
 
         try {
             Connection connection = this.transactions.get(id);
@@ -343,7 +355,16 @@ public abstract class DatabaseManager {
      */
     public final boolean transaction() {
         Preconditions.checkState(this.source != null, "Not connected to a database");
-        return this.transactions.containsKey(Thread.currentThread().getId());
+        return this.transaction(Thread.currentThread().getId());
+    }
+
+    /**
+     * Returns whether the thread with the specified {@code id} is currently involved in a database transaction.
+     * @return {@code true}, if the thread is involved in a transaction, {@code false}, if not.
+     */
+    public final boolean transaction(final long id) {
+        Preconditions.checkState(this.source != null, "Not connected to a database");
+        return this.transactions.containsKey(id);
     }
 
     /**
