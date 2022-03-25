@@ -27,6 +27,8 @@ import java.nio.charset.StandardCharsets;
  *     }
  * }
  * </code></pre>
+ *
+ * @since 1.0.0
  */
 public class JsonQueryLoader extends QueryLoader {
 

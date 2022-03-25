@@ -27,6 +27,8 @@ import java.util.logging.Level;
  *     {@literal </queries>}
  * {@literal </any_root_tag>}
  * </code></pre>
+ *
+ * @since 1.0.0
  */
 public class XmlQueryLoader extends QueryLoader {
 
