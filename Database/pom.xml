@@ -46,6 +46,7 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <encoding>UTF-8</encoding>
                     <links>
                         <link>https://javadoc.io/doc/org.jetbrains/annotations/23.0.0/</link>
                     </links>
