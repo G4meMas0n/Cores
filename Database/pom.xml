@@ -9,6 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
+    <name>Database Core</name>
     <artifactId>cores-database</artifactId>
     <version>1.0.0-dev</version>
 
