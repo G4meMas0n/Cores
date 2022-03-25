@@ -2,7 +2,7 @@ package com.github.g4memas0n.cores.database;
 
 import com.github.g4memas0n.cores.database.driver.Driver;
 import com.github.g4memas0n.cores.database.driver.DriverLoader;
-import com.github.g4memas0n.cores.database.loader.QueryLoader;
+import com.github.g4memas0n.cores.database.query.QueryLoader;
 import com.google.common.base.Preconditions;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;

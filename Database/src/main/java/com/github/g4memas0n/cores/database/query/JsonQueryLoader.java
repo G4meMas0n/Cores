@@ -1,4 +1,4 @@
-package com.github.g4memas0n.cores.database.loader;
+package com.github.g4memas0n.cores.database.query;
 
 import com.google.common.base.Preconditions;
 import com.google.gson.Gson;

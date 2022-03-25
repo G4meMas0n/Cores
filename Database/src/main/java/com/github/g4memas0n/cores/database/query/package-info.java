@@ -4,4 +4,4 @@
  *
  * @since 1.0.0
  */
-package com.github.g4memas0n.cores.database.loader;
+package com.github.g4memas0n.cores.database.query;

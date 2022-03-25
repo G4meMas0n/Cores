@@ -1,6 +1,6 @@
 package com.github.g4memas0n.cores.database.driver;
 
-import com.github.g4memas0n.cores.database.loader.QueryLoader;
+import com.github.g4memas0n.cores.database.query.QueryLoader;
 import org.junit.Assert;
 import org.junit.Test;
 

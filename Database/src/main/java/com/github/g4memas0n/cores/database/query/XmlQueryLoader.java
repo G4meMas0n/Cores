@@ -1,4 +1,4 @@
-package com.github.g4memas0n.cores.database.loader;
+package com.github.g4memas0n.cores.database.query;
 
 import com.github.g4memas0n.cores.database.DatabaseManager;
 import com.google.common.base.Preconditions;

@@ -1,4 +1,4 @@
-package com.github.g4memas0n.cores.database.loader;
+package com.github.g4memas0n.cores.database.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
