@@ -207,12 +207,16 @@ public abstract class DatabaseManager {
             final Connection connection = source.getConnection();
 
             getLogger().info("Successfully established connection to database");
-            getLogger().info("Initializing database...");
 
-            if (this.initialize(connection)) {
-                getLogger().info("Successfully initialized database");
+            try {
+                getLogger().info("Initializing database...");
+                this.initialize(connection);
                 this.source = source;
+                getLogger().info("Successfully initialized database");
+
                 return true;
+            } catch (SQLException ex) {
+                getLogger().log(Level.SEVERE, "Failed to initialize database", ex);
             }
         } catch (SQLException ex) {
             getLogger().log(Level.SEVERE, "Failed to establish connection to database", ex);
@@ -225,11 +229,13 @@ public abstract class DatabaseManager {
 
     /**
      * Initializes the database by ensuring that all needed database tables, indices, etc... exists.
+     * If any database errors occurs during the initialization then an exception should be thrown by the implementing
+     * class.
      *
      * @param connection an active connection session to the database.
-     * @return {@code true} if the database has been successfully initialized.
+     * @throws SQLException if any exception occurs during the database initialization.
      */
-    public abstract boolean initialize(@NotNull final Connection connection);
+    public abstract void initialize(@NotNull final Connection connection) throws SQLException;
 
     /**
      * Disconnects from the connected database and shutdowns the used data source.<br>
