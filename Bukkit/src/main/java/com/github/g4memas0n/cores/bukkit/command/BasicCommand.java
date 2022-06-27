@@ -95,10 +95,39 @@ public abstract class BasicCommand<T extends JavaPlugin> {
         this.usage = usage;
     }
 
+    /**
+     * Executes this command for the given {@code sender} with the given {@code arguments}, returning its success.
+     * <p>
+     *     Note:<br>
+     *     This method gets only called if the command source ({@code sender}) is permitted to perform this command.
+     *     This means that the implementation of this method is not required to check the permission for the given
+     *     {@code sender}.<br>
+     *     If the implementation of this method returns {@code false}, the description and usage of this command
+     *     will be send to the command source ({@code sender}).
+     * </p>
+     *
+     * @param sender the source who executed the command.
+     * @param arguments the passed arguments of the sender.
+     * @return {@code true} if the execution was successful and valid.
+     */
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public abstract boolean execute(@NotNull final CommandSender sender,
                                     @NotNull final String[] arguments);
 
+    /**
+     * Requests a list of possible completions for the last element in the given {@code arguments} if it gets executed
+     * by the given {@code sender}.
+     * <p>
+     *     Note:<br>
+     *     This method gets only called if the command source ({@code sender}) is permitted to perform this command.
+     *     This means that the implementation of this method is not required to check the permission for the given
+     *     {@code sender}.
+     * </p>
+     *
+     * @param sender the source who tab-completed the command.
+     * @param arguments the passed arguments of the sender, including the final partial argument to be completed.
+     * @return a list of possible completions for the final arguments.
+     */
     public abstract @NotNull List<String> tabComplete(@NotNull final CommandSender sender,
                                                       @NotNull final String[] arguments);
 
