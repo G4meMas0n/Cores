@@ -1,5 +1,6 @@
 package com.github.g4memas0n.cores.bukkit.command;
 
+import com.github.g4memas0n.cores.bukkit.Registrable;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
@@ -8,7 +9,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
-public abstract class BasicCommand<T extends JavaPlugin> {
+public abstract class BasicCommand<T extends JavaPlugin> implements Registrable<T> {
 
     protected final String name;
     protected final int minArgs;
@@ -31,7 +32,7 @@ public abstract class BasicCommand<T extends JavaPlugin> {
         this.permission = "";
     }
 
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    @Override
     public boolean register(@NotNull final T plugin) {
         if (this.plugin == null) {
             this.plugin = plugin;
@@ -41,7 +42,7 @@ public abstract class BasicCommand<T extends JavaPlugin> {
         return false;
     }
 
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    @Override
     public boolean unregister() {
         if (this.plugin != null) {
             this.plugin = null;
