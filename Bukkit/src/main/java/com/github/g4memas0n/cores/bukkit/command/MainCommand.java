@@ -7,12 +7,12 @@ import org.bukkit.command.TabExecutor;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 public abstract class MainCommand<T extends JavaPlugin> extends BasicCommand<T> implements TabExecutor {
@@ -96,6 +96,10 @@ public abstract class MainCommand<T extends JavaPlugin> extends BasicCommand<T> 
         return false;
     }
 
+    public @Nullable PluginCommand getParent() {
+        return this.parent;
+    }
+
     @Override
     public @NotNull String getDescription() {
         if (this.parent != null && !this.parent.getDescription().isEmpty()) {
@@ -103,6 +107,11 @@ public abstract class MainCommand<T extends JavaPlugin> extends BasicCommand<T> 
         }
 
         return super.getDescription();
+    }
+
+    @Override
+    public boolean hasDescription() {
+        return this.parent != null && !this.parent.getDescription().isEmpty() || super.hasDescription();
     }
 
     @Override
@@ -124,6 +133,11 @@ public abstract class MainCommand<T extends JavaPlugin> extends BasicCommand<T> 
     }
 
     @Override
+    public boolean hasPermission() {
+        return this.parent != null && this.parent.getPermission() != null || super.hasPermission();
+    }
+
+    @Override
     public void setPermission(@NotNull final String permission) {
         if (this.parent != null) {
             this.parent.setPermission(permission);
@@ -142,6 +156,11 @@ public abstract class MainCommand<T extends JavaPlugin> extends BasicCommand<T> 
     }
 
     @Override
+    public boolean hasUsage() {
+        return this.parent != null && !this.parent.getUsage().isEmpty() || super.hasUsage();
+    }
+
+    @Override
     public void setUsage(@NotNull final String usage) {
         if (this.parent != null) {
             this.parent.setUsage(usage);
@@ -153,73 +172,76 @@ public abstract class MainCommand<T extends JavaPlugin> extends BasicCommand<T> 
     @Override
     public final boolean onCommand(@NotNull final CommandSender sender, @NotNull final Command command,
                                    @NotNull final String label, @NotNull String[] arguments) {
-        if (sender.hasPermission(this.getPermission())) {
-            if (arguments.length > 0) {
-                final BasicCommand<T> subcommand = this.commands.get(arguments[0].toLowerCase(Locale.ROOT));
-
-                if (subcommand != null && sender.hasPermission(subcommand.getPermission())) {
-                    arguments = Arrays.copyOfRange(arguments, 1, arguments.length);
-
-                    if (!subcommand.argsInRange(arguments.length) || !subcommand.execute(sender, arguments)) {
-                        sender.sendMessage(subcommand.getDescription());
-                        sender.sendMessage(subcommand.getUsage());
-                    }
-
-                    return true;
-                }
-            }
-
-            if (!this.argsInRange(arguments.length) || !this.execute(sender, arguments)) {
-                sender.sendMessage(this.getDescription());
-                sender.sendMessage(this.getUsage());
+        if (this.hasPermission() && !sender.hasPermission(this.getPermission())) {
+            if (this.parent.getPermissionMessage() != null) {
+                sender.sendMessage(this.parent.getPermissionMessage());
             }
 
             return true;
         }
 
-        //TODO Send permission message
+        if (this.commands != null && arguments.length > 0) {
+            final BasicCommand<T> subcommand = this.commands.get(arguments[0].toLowerCase());
+
+            if (subcommand != null && (!subcommand.hasPermission() || sender.hasPermission(subcommand.getPermission()))) {
+                arguments = Arrays.copyOfRange(arguments, 1, arguments.length);
+
+                if (!subcommand.argsInRange(arguments.length) || !subcommand.execute(sender, arguments)) {
+                    sender.sendMessage(subcommand.getDescription());
+                    sender.sendMessage(subcommand.getUsage());
+                }
+
+                return true;
+            }
+        }
+
+        if (!this.argsInRange(arguments.length) || !this.execute(sender, arguments)) {
+            sender.sendMessage(this.getDescription());
+            sender.sendMessage(this.getUsage());
+        }
+
         return true;
     }
 
     @Override
     public final @NotNull List<String> onTabComplete(@NotNull final CommandSender sender, @NotNull final Command command,
                                                      @NotNull final String label, @NotNull String[] arguments) {
-        if (sender.hasPermission(this.getPermission())) {
-            if (arguments.length > 1) {
-                final BasicCommand<T> subcommand = this.commands.get(arguments[0].toLowerCase(Locale.ROOT));
-
-                if (subcommand != null && sender.hasPermission(subcommand.getPermission())) {
-                    arguments = Arrays.copyOfRange(arguments, 1, arguments.length);
-
-                    if (subcommand.argsInRange(arguments.length)) {
-                        return subcommand.tabComplete(sender, arguments);
-                    }
-
-                    return Collections.emptyList();
-                }
-            }
-
-            final List<String> completions = new ArrayList<>();
-
-            if (arguments.length == 1) {
-                for (final BasicCommand<T> subcommand : this.commands.values()) {
-                    if (sender.hasPermission(subcommand.getPermission())) {
-                        if (StringUtil.startsWithIgnoreCase(subcommand.getName(), arguments[0])) {
-                            completions.add(subcommand.getName());
-                        }
-                    }
-                }
-            }
-
-            if (this.argsInRange(arguments.length)) {
-                completions.addAll(this.tabComplete(sender, arguments));
-            }
-
-            Collections.sort(completions);
-
-            return completions;
+        if (this.hasPermission() && !sender.hasPermission(this.getPermission())) {
+            return Collections.emptyList();
         }
 
-        return Collections.emptyList();
+        if (this.commands != null && arguments.length > 1) {
+            final BasicCommand<T> subcommand = this.commands.get(arguments[0].toLowerCase());
+
+            if (subcommand != null && (!subcommand.hasPermission() || sender.hasPermission(subcommand.getPermission()))) {
+                arguments = Arrays.copyOfRange(arguments, 1, arguments.length);
+
+                if (subcommand.argsInRange(arguments.length)) {
+                    return subcommand.tabComplete(sender, arguments);
+                }
+
+                return Collections.emptyList();
+            }
+        }
+
+        final List<String> completions = new ArrayList<>();
+
+        if (this.commands != null && arguments.length == 1) {
+            for (final BasicCommand<T> subcommand : this.commands.values()) {
+                if (!subcommand.hasPermission() || sender.hasPermission(subcommand.getPermission())) {
+                    if (StringUtil.startsWithIgnoreCase(subcommand.getName(), arguments[0])) {
+                        completions.add(subcommand.getName());
+                    }
+                }
+            }
+        }
+
+        if (this.argsInRange(arguments.length)) {
+            completions.addAll(this.tabComplete(sender, arguments));
+        }
+
+        Collections.sort(completions);
+
+        return completions;
     }
 }

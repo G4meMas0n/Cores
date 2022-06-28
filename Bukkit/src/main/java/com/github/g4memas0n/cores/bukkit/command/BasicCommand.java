@@ -72,7 +72,11 @@ public abstract class BasicCommand<T extends JavaPlugin> {
     }
 
     public @NotNull String getDescription() {
-        return this.description;
+        return this.description != null ? this.description : "";
+    }
+
+    public boolean hasDescription() {
+        return this.description != null;
     }
 
     public void setDescription(@NotNull final String description) {
@@ -80,7 +84,11 @@ public abstract class BasicCommand<T extends JavaPlugin> {
     }
 
     public @NotNull String getPermission() {
-        return this.permission;
+        return this.permission != null ? this.permission : "";
+    }
+
+    public boolean hasPermission() {
+        return this.permission != null;
     }
 
     public void setPermission(@NotNull final String permission) {
@@ -88,7 +96,11 @@ public abstract class BasicCommand<T extends JavaPlugin> {
     }
 
     public @NotNull String getUsage() {
-        return this.usage;
+        return this.usage != null ? this.usage : "";
+    }
+
+    public boolean hasUsage() {
+        return this.usage != null;
     }
 
     public void setUsage(@NotNull final String usage) {
