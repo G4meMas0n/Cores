@@ -29,7 +29,6 @@ public abstract class BasicCommand<T extends JavaPlugin> implements Registrable<
         this.name = name.toLowerCase(Locale.ROOT);
         this.minArgs = minArgs;
         this.maxArgs = maxArgs;
-        this.permission = "";
     }
 
     @Override
@@ -72,36 +71,24 @@ public abstract class BasicCommand<T extends JavaPlugin> implements Registrable<
                 : arguments >= this.minArgs;
     }
 
-    public @NotNull String getDescription() {
-        return this.description != null ? this.description : "";
-    }
-
-    public boolean hasDescription() {
-        return this.description != null;
+    public @Nullable String getDescription() {
+        return this.description;
     }
 
     public void setDescription(@NotNull final String description) {
         this.description = description;
     }
 
-    public @NotNull String getPermission() {
+    public @Nullable String getPermission() {
         return this.permission != null ? this.permission : "";
-    }
-
-    public boolean hasPermission() {
-        return this.permission != null;
     }
 
     public void setPermission(@NotNull final String permission) {
         this.permission = permission;
     }
 
-    public @NotNull String getUsage() {
+    public @Nullable String getUsage() {
         return this.usage != null ? this.usage : "";
-    }
-
-    public boolean hasUsage() {
-        return this.usage != null;
     }
 
     public void setUsage(@NotNull final String usage) {

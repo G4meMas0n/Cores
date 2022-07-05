@@ -106,12 +106,7 @@ public abstract class MainCommand<T extends JavaPlugin> extends BasicCommand<T> 
             return this.parent.getDescription();
         }
 
-        return super.getDescription();
-    }
-
-    @Override
-    public boolean hasDescription() {
-        return this.parent != null && !this.parent.getDescription().isEmpty() || super.hasDescription();
+        return super.getDescription() != null ? super.getDescription() : "";
     }
 
     @Override
@@ -124,17 +119,12 @@ public abstract class MainCommand<T extends JavaPlugin> extends BasicCommand<T> 
     }
 
     @Override
-    public @NotNull String getPermission() {
+    public @Nullable String getPermission() {
         if (this.parent != null && this.parent.getPermission() != null) {
             return this.parent.getPermission();
         }
 
         return super.getPermission();
-    }
-
-    @Override
-    public boolean hasPermission() {
-        return this.parent != null && this.parent.getPermission() != null || super.hasPermission();
     }
 
     @Override
@@ -152,12 +142,7 @@ public abstract class MainCommand<T extends JavaPlugin> extends BasicCommand<T> 
             return this.parent.getUsage();
         }
 
-        return super.getUsage();
-    }
-
-    @Override
-    public boolean hasUsage() {
-        return this.parent != null && !this.parent.getUsage().isEmpty() || super.hasUsage();
+        return super.getUsage() != null ? super.getUsage() : "";
     }
 
     @Override
@@ -172,7 +157,7 @@ public abstract class MainCommand<T extends JavaPlugin> extends BasicCommand<T> 
     @Override
     public final boolean onCommand(@NotNull final CommandSender sender, @NotNull final Command command,
                                    @NotNull final String label, @NotNull String[] arguments) {
-        if (this.hasPermission() && !sender.hasPermission(this.getPermission())) {
+        if (this.getPermission() != null && !sender.hasPermission(this.getPermission())) {
             if (this.parent.getPermissionMessage() != null) {
                 sender.sendMessage(this.parent.getPermissionMessage());
             }
@@ -180,22 +165,35 @@ public abstract class MainCommand<T extends JavaPlugin> extends BasicCommand<T> 
             return true;
         }
 
+        boolean invalid = false;
+
         if (this.commands != null && arguments.length > 0) {
             final BasicCommand<T> subcommand = this.commands.get(arguments[0].toLowerCase());
 
-            if (subcommand != null && (!subcommand.hasPermission() || sender.hasPermission(subcommand.getPermission()))) {
+            if (subcommand != null && (subcommand.getPermission() == null || sender.hasPermission(subcommand.getPermission()))) {
                 arguments = Arrays.copyOfRange(arguments, 1, arguments.length);
 
-                if (!subcommand.argsInRange(arguments.length) || !subcommand.execute(sender, arguments)) {
-                    sender.sendMessage(subcommand.getDescription());
-                    sender.sendMessage(subcommand.getUsage());
+                if (subcommand.argsInRange(arguments.length) && subcommand.execute(sender, arguments)) {
+                    // Successful subcommand execution
+                    return true;
                 }
 
-                return true;
+                if (subcommand.getDescription() != null || subcommand.getUsage() != null) {
+                    // Shows subcommand description and usage
+                    if (subcommand.getDescription() != null) {
+                        sender.sendMessage(subcommand.getDescription());
+                    }
+                    if (subcommand.getUsage() != null) {
+                        sender.sendMessage(subcommand.getUsage());
+                    }
+                    return true;
+                }
+
+                invalid = true;
             }
         }
 
-        if (!this.argsInRange(arguments.length) || !this.execute(sender, arguments)) {
+        if (invalid || !this.argsInRange(arguments.length) || !this.execute(sender, arguments)) {
             sender.sendMessage(this.getDescription());
             sender.sendMessage(this.getUsage());
         }
@@ -206,14 +204,14 @@ public abstract class MainCommand<T extends JavaPlugin> extends BasicCommand<T> 
     @Override
     public final @NotNull List<String> onTabComplete(@NotNull final CommandSender sender, @NotNull final Command command,
                                                      @NotNull final String label, @NotNull String[] arguments) {
-        if (this.hasPermission() && !sender.hasPermission(this.getPermission())) {
+        if (this.getPermission() != null && !sender.hasPermission(this.getPermission())) {
             return Collections.emptyList();
         }
 
         if (this.commands != null && arguments.length > 1) {
             final BasicCommand<T> subcommand = this.commands.get(arguments[0].toLowerCase());
 
-            if (subcommand != null && (!subcommand.hasPermission() || sender.hasPermission(subcommand.getPermission()))) {
+            if (subcommand != null && (subcommand.getPermission() == null || sender.hasPermission(subcommand.getPermission()))) {
                 arguments = Arrays.copyOfRange(arguments, 1, arguments.length);
 
                 if (subcommand.argsInRange(arguments.length)) {
@@ -228,7 +226,7 @@ public abstract class MainCommand<T extends JavaPlugin> extends BasicCommand<T> 
 
         if (this.commands != null && arguments.length == 1) {
             for (final BasicCommand<T> subcommand : this.commands.values()) {
-                if (!subcommand.hasPermission() || sender.hasPermission(subcommand.getPermission())) {
+                if (subcommand.getPermission() == null || sender.hasPermission(subcommand.getPermission())) {
                     if (StringUtil.startsWithIgnoreCase(subcommand.getName(), arguments[0])) {
                         completions.add(subcommand.getName());
                     }
