@@ -80,11 +80,7 @@ public abstract class Configuration {
                 this.plugin.getLogger().severe("Unable to load configuration file '" + config.getName() + "' on second try: " + ex.getMessage());
             }
         }
-
-        this.initialize();
     }
-
-    public abstract void initialize();
 
     public void save() {
         final File config = new File(this.plugin.getDataFolder(), this.filename);
