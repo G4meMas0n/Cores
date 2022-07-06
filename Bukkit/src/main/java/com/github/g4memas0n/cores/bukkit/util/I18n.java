@@ -25,6 +25,10 @@ public final class I18n {
     private ResourceBundle customBundle;
     private ResourceBundle localBundle;
 
+    public I18n(@NotNull final Plugin plugin) {
+        this(plugin, "resources/messages");
+    }
+
     public I18n(@NotNull final Plugin plugin, @NotNull final String bundle) {
         this.plugin = plugin;
         this.classLoader = new CustomFileClassLoader(plugin.getClass().getClassLoader(), plugin.getDataFolder());
@@ -46,7 +50,7 @@ public final class I18n {
                         + ": Using fallback locale " + this.localBundle.getLocale());
             }
         } catch (MissingResourceException ex) {
-            this.plugin.getLogger().warning("Unable to find resource bundle: Using default resource bundle.");
+            this.plugin.getLogger().warning("Unable to find resource bundle: Using default resource bundle");
         }
 
         try {

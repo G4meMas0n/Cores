@@ -28,12 +28,12 @@ public abstract class Configuration {
         final File config = new File(this.plugin.getDataFolder(), this.filename);
 
         if (!config.exists()) {
-            this.plugin.getLogger().warning("Unable to delete configuration file '" + config.getName() + "': Configuration file not found.");
+            this.plugin.getLogger().warning("Unable to delete configuration file '" + config.getName() + "': Configuration file not found");
             return;
         }
 
         if (config.delete()) {
-            this.plugin.getLogger().info("Deleted configuration file '" + config.getName() + "'.");
+            this.plugin.getLogger().info("Deleted configuration file '" + config.getName() + "'");
         }
     }
 
@@ -43,22 +43,22 @@ public abstract class Configuration {
 
         try {
             this.storage.load(config);
-            this.plugin.getLogger().info("Loaded configuration file '" + config.getName() + "'.");
+            this.plugin.getLogger().info("Loaded configuration file '" + config.getName() + "'");
 
             loaded = true;
         } catch (InvalidConfigurationException ex) {
-            this.plugin.getLogger().warning("Unable to load configuration file '" + config.getName() + "': Configuration file is broken.");
+            this.plugin.getLogger().warning("Unable to load configuration file '" + config.getName() + "': Configuration file is broken");
 
             final File broken = new File(config.getParent(), config.getName().replaceAll("(?i)(yml)$", "broken.$1"));
 
             if (broken.exists() && broken.delete()) {
-                this.plugin.getLogger().info("Deleted old broken configuration file '" + broken.getName() + "'.");
+                this.plugin.getLogger().info("Deleted old broken configuration file '" + broken.getName() + "'");
             }
             if (config.renameTo(broken)) {
-                this.plugin.getLogger().info("Renamed broken configuration file '" + config.getName() + "' to '" + broken.getName() + "'.");
+                this.plugin.getLogger().info("Renamed broken configuration file '" + config.getName() + "' to '" + broken.getName() + "'");
             }
         } catch (FileNotFoundException ex) {
-            this.plugin.getLogger().warning("Unable to load configuration file '" + config.getName() + "': Configuration file not found.");
+            this.plugin.getLogger().warning("Unable to load configuration file '" + config.getName() + "': Configuration file not found");
         } catch (IOException ex) {
             this.plugin.getLogger().warning("Unable to load configuration file '" + config.getName() + "': " + ex.getMessage());
         }
@@ -68,13 +68,13 @@ public abstract class Configuration {
                 this.plugin.saveResource(this.filename, true);
 
                 if (config.exists()) {
-                    this.plugin.getLogger().info("Saved default configuration file '" + config.getName() + "'.");
+                    this.plugin.getLogger().info("Saved default configuration file '" + config.getName() + "'");
                 }
             }
 
             try {
                 this.storage.load(config);
-                this.plugin.getLogger().info("Loaded configuration file '" + config.getName() + "' on second try.");
+                this.plugin.getLogger().info("Loaded configuration file '" + config.getName() + "' on second try");
             } catch (FileNotFoundException ignored) {
             } catch (InvalidConfigurationException | IOException ex) {
                 this.plugin.getLogger().severe("Unable to load configuration file '" + config.getName() + "' on second try: " + ex.getMessage());
@@ -87,7 +87,7 @@ public abstract class Configuration {
 
         try {
             this.storage.save(config);
-            this.plugin.getLogger().info("Saved configuration file '" + config.getName() + "'.");
+            this.plugin.getLogger().info("Saved configuration file '" + config.getName() + "'");
         } catch (IOException ex) {
             this.plugin.getLogger().warning("Unable to save configuration file '" + config.getName() + "': " + ex.getMessage());
         }
