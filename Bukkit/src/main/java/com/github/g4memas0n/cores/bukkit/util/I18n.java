@@ -86,9 +86,8 @@ public final class I18n {
         if (this.customBundle != null) {
             try {
                 return this.customBundle.getString(key);
-            } catch (MissingResourceException ex) {
-                this.plugin.getLogger().warning("Missing key '" + key + "' in custom resource bundle for locale "
-                        + this.customBundle.getLocale());
+            } catch (MissingResourceException ignored) {
+
             }
         }
 
@@ -122,6 +121,10 @@ public final class I18n {
         return format;
     }
 
+    public boolean contains(@NotNull final String key) {
+        return this.defaultBundle.containsKey(key);
+    }
+
     public static @NotNull String tl(@NotNull final String key, @NotNull final Object... arguments) {
         if (instance == null) {
             throw new IllegalStateException("Translations are not available");
@@ -137,6 +140,10 @@ public final class I18n {
     public static @NotNull String tlPrefix(@NotNull final String prefix, @NotNull final String key,
                                            @NotNull final Object... arguments) {
         return tl(prefix) + " " + tl(key, arguments);
+    }
+
+    public static boolean has(@NotNull final String key) {
+        return instance != null && instance.contains(key);
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.github.g4memas0n.cores.bukkit.command;
 
+import com.google.common.base.Preconditions;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
@@ -14,18 +15,40 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public abstract class MainCommand<T extends JavaPlugin> extends BasicCommand<T> implements TabExecutor {
 
     private Map<String, BasicCommand<T>> commands;
     private PluginCommand parent;
 
-    public MainCommand(@NotNull final String name, final int minArgs) {
-        super(name, minArgs);
+    public MainCommand(@NotNull final String name, @Nullable final String permission, final int minArgs) {
+        super(name, permission, minArgs);
     }
 
-    public MainCommand(@NotNull final String name, final int minArgs, final int maxArgs) {
-        super(name, minArgs, maxArgs);
+    public MainCommand(@NotNull final String name, @Nullable final String permission, final int minArgs, final int maxArgs) {
+        super(name, permission, minArgs, maxArgs);
+    }
+
+    public boolean register(@NotNull final BasicCommand<T> command) {
+        Preconditions.checkState(this.parent == null);
+        if (this.commands == null) {
+            this.commands = new HashMap<>();
+        }
+
+        return this.commands.putIfAbsent(command.getName(), command) == null;
+    }
+
+    public boolean unregister(@NotNull final BasicCommand<T> command) {
+        Preconditions.checkState(this.parent == null);
+        if (this.commands != null && this.commands.remove(command.getName(), command)) {
+            if (this.commands.isEmpty()) {
+                this.commands = null;
+            }
+            return true;
+        }
+
+        return false;
     }
 
     @Override
@@ -38,38 +61,13 @@ public abstract class MainCommand<T extends JavaPlugin> extends BasicCommand<T> 
         }
 
         if (super.register(plugin)) {
+            if (this.commands != null) {
+                this.commands.values().forEach(command -> command.register(plugin));
+            }
+
             this.parent = parent;
             this.parent.setExecutor(this);
             this.parent.setTabCompleter(this);
-
-            if (this.commands != null) {
-                for (final BasicCommand<T> subcommand : this.commands.values()) {
-                    if (subcommand.plugin == null && !subcommand.register(plugin)) {
-                        subcommand.plugin = plugin;
-                    }
-                }
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-
-    public boolean register(@NotNull final BasicCommand<T> command) {
-        if (this.commands == null) {
-            this.commands = new HashMap<>();
-        }
-
-        return this.commands.putIfAbsent(command.getName(), command) == null;
-    }
-
-    public boolean unregister(@NotNull final BasicCommand<T> command) {
-        if (this.commands != null && this.commands.remove(command.getName(), command)) {
-            if (this.commands.isEmpty()) {
-                this.commands = null;
-            }
-
             return true;
         }
 
@@ -78,88 +76,53 @@ public abstract class MainCommand<T extends JavaPlugin> extends BasicCommand<T> 
 
     @Override
     public boolean unregister() {
-        if (this.parent != null && super.unregister()) {
-            if (this.commands != null) {
-                for (final BasicCommand<T> subcommand : this.commands.values()) {
-                    if (subcommand.plugin != null && !subcommand.unregister()) {
-                        subcommand.plugin = null;
-                    }
-                }
-            }
-
+        if (this.parent != null) {
             this.parent.setTabCompleter(null);
             this.parent.setExecutor(null);
             this.parent = null;
-            return true;
+
+            if (this.commands != null) {
+                this.commands.values().forEach(BasicCommand::unregister);
+            }
+
+            return super.unregister();
         }
 
         return false;
     }
 
-    public @Nullable PluginCommand getParent() {
-        return this.parent;
-    }
-
     @Override
-    public @NotNull String getDescription() {
-        if (this.parent != null && !this.parent.getDescription().isEmpty()) {
-            return this.parent.getDescription();
-        }
+    public @Nullable String getDescription() {
+        final String description = super.getDescription();
 
-        return super.getDescription() != null ? super.getDescription() : "";
-    }
-
-    @Override
-    public void setDescription(@NotNull final String description) {
-        if (this.parent != null) {
+        if (this.parent != null && !this.parent.getDescription().isEmpty() && description != null) {
             this.parent.setDescription(description);
         }
 
-        super.setDescription(description);
+        return description;
     }
 
     @Override
-    public @Nullable String getPermission() {
-        if (this.parent != null && this.parent.getPermission() != null) {
-            return this.parent.getPermission();
-        }
+    public @Nullable String getUsage() {
+        final String usage = super.getUsage();
 
-        return super.getPermission();
-    }
-
-    @Override
-    public void setPermission(@NotNull final String permission) {
-        if (this.parent != null) {
-            this.parent.setPermission(permission);
-        }
-
-        super.setPermission(permission);
-    }
-
-    @Override
-    public @NotNull String getUsage() {
-        if (this.parent != null && !this.parent.getUsage().isEmpty()) {
-            return this.parent.getUsage();
-        }
-
-        return super.getUsage() != null ? super.getUsage() : "";
-    }
-
-    @Override
-    public void setUsage(@NotNull final String usage) {
-        if (this.parent != null) {
+        if (this.parent != null && !this.parent.getUsage().isEmpty() && usage != null) {
             this.parent.setUsage(usage);
         }
 
-        super.setUsage(usage);
+        return usage;
     }
 
     @Override
     public final boolean onCommand(@NotNull final CommandSender sender, @NotNull final Command command,
-                                   @NotNull final String label, @NotNull String[] arguments) {
-        if (this.getPermission() != null && !sender.hasPermission(this.getPermission())) {
-            if (this.parent.getPermissionMessage() != null) {
-                sender.sendMessage(this.parent.getPermissionMessage());
+                                   @NotNull final String alias, @NotNull final String[] arguments) {
+        final String permission = this.parent.getPermission() != null ? this.parent.getPermission() : this.permission;
+
+        if (permission != null && !sender.hasPermission(permission)) {
+            final String message = this.parent.getPermissionMessage();
+
+            if (message != null) {
+                sender.sendMessage(message);
             }
 
             return true;
@@ -170,32 +133,32 @@ public abstract class MainCommand<T extends JavaPlugin> extends BasicCommand<T> 
         if (this.commands != null && arguments.length > 0) {
             final BasicCommand<T> subcommand = this.commands.get(arguments[0].toLowerCase());
 
-            if (subcommand != null && (subcommand.getPermission() == null || sender.hasPermission(subcommand.getPermission()))) {
-                arguments = Arrays.copyOfRange(arguments, 1, arguments.length);
+            if (subcommand != null && (subcommand.permission == null || sender.hasPermission(subcommand.permission))) {
+                final String[] args = Arrays.copyOfRange(arguments, 1, arguments.length);
 
-                if (subcommand.argsInRange(arguments.length) && subcommand.execute(sender, arguments)) {
-                    // Successful subcommand execution
-                    return true;
-                }
+                if (!subcommand.argsInRange(arguments.length) || !subcommand.execute(sender, subcommand.name, args)) {
+                    if (subcommand.hasUsage()) {
+                        if (subcommand.hasDescription()) {
+                            sender.sendMessage(Objects.requireNonNull(subcommand.getDescription()));
+                        }
 
-                if (subcommand.getDescription() != null || subcommand.getUsage() != null) {
-                    // Shows subcommand description and usage
-                    if (subcommand.getDescription() != null) {
-                        sender.sendMessage(subcommand.getDescription());
+                        sender.sendMessage(Objects.requireNonNull(subcommand.getUsage()).replace("<command>", subcommand.name));
+                        return true;
                     }
-                    if (subcommand.getUsage() != null) {
-                        sender.sendMessage(subcommand.getUsage());
-                    }
-                    return true;
-                }
 
-                invalid = true;
+                    invalid = true;
+                }
             }
         }
 
-        if (invalid || !this.argsInRange(arguments.length) || !this.execute(sender, arguments)) {
-            sender.sendMessage(this.getDescription());
-            sender.sendMessage(this.getUsage());
+        if (invalid || !this.argsInRange(arguments.length) || !this.execute(sender, alias, arguments)) {
+            if (this.hasUsage()) {
+                if (this.hasDescription()) {
+                    sender.sendMessage(Objects.requireNonNull(this.getDescription()));
+                }
+
+                sender.sendMessage(Objects.requireNonNull(this.getUsage()).replace("<command>", alias));
+            }
         }
 
         return true;
@@ -203,19 +166,21 @@ public abstract class MainCommand<T extends JavaPlugin> extends BasicCommand<T> 
 
     @Override
     public final @NotNull List<String> onTabComplete(@NotNull final CommandSender sender, @NotNull final Command command,
-                                                     @NotNull final String label, @NotNull String[] arguments) {
-        if (this.getPermission() != null && !sender.hasPermission(this.getPermission())) {
+                                                     @NotNull final String alias, @NotNull final String[] arguments) {
+        final String permission = this.parent.getPermission() != null ? this.parent.getPermission() : this.permission;
+
+        if (permission != null && !sender.hasPermission(permission)) {
             return Collections.emptyList();
         }
 
         if (this.commands != null && arguments.length > 1) {
             final BasicCommand<T> subcommand = this.commands.get(arguments[0].toLowerCase());
 
-            if (subcommand != null && (subcommand.getPermission() == null || sender.hasPermission(subcommand.getPermission()))) {
-                arguments = Arrays.copyOfRange(arguments, 1, arguments.length);
+            if (subcommand != null && (subcommand.permission == null || sender.hasPermission(subcommand.permission))) {
+                final String[] args = Arrays.copyOfRange(arguments, 1, arguments.length);
 
                 if (subcommand.argsInRange(arguments.length)) {
-                    return subcommand.tabComplete(sender, arguments);
+                    return subcommand.tabComplete(sender, subcommand.name, args);
                 }
 
                 return Collections.emptyList();
@@ -226,7 +191,7 @@ public abstract class MainCommand<T extends JavaPlugin> extends BasicCommand<T> 
 
         if (this.commands != null && arguments.length == 1) {
             for (final BasicCommand<T> subcommand : this.commands.values()) {
-                if (subcommand.getPermission() == null || sender.hasPermission(subcommand.getPermission())) {
+                if (subcommand.permission == null || sender.hasPermission(subcommand.permission)) {
                     if (StringUtil.startsWithIgnoreCase(subcommand.getName(), arguments[0])) {
                         completions.add(subcommand.getName());
                     }
@@ -235,7 +200,7 @@ public abstract class MainCommand<T extends JavaPlugin> extends BasicCommand<T> 
         }
 
         if (this.argsInRange(arguments.length)) {
-            completions.addAll(this.tabComplete(sender, arguments));
+            completions.addAll(this.tabComplete(sender, alias, arguments));
         }
 
         Collections.sort(completions);

@@ -1,6 +1,6 @@
 package com.github.g4memas0n.cores.bukkit.command;
 
-import com.github.g4memas0n.cores.bukkit.Registrable;
+import com.github.g4memas0n.cores.bukkit.util.I18n;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
@@ -9,29 +9,29 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
-public abstract class BasicCommand<T extends JavaPlugin> implements Registrable<T> {
+public abstract class BasicCommand<T extends JavaPlugin> {
 
     protected final String name;
+    protected final String permission;
     protected final int minArgs;
     protected final int maxArgs;
 
     protected T plugin;
 
     private String description;
-    private String permission;
     private String usage;
 
-    public BasicCommand(@NotNull final String name, final int minArgs) {
-        this(name, minArgs, -1);
+    public BasicCommand(@NotNull final String name, @Nullable final String permission, final int minArgs) {
+        this(name, permission, minArgs, -1);
     }
 
-    public BasicCommand(@NotNull final String name, final int minArgs, final int maxArgs) {
+    public BasicCommand(@NotNull final String name, @Nullable final String permission, final int minArgs, final int maxArgs) {
         this.name = name.toLowerCase(Locale.ROOT);
+        this.permission = permission;
         this.minArgs = minArgs;
         this.maxArgs = maxArgs;
     }
 
-    @Override
     public boolean register(@NotNull final T plugin) {
         if (this.plugin == null) {
             this.plugin = plugin;
@@ -41,7 +41,6 @@ public abstract class BasicCommand<T extends JavaPlugin> implements Registrable<
         return false;
     }
 
-    @Override
     public boolean unregister() {
         if (this.plugin != null) {
             this.plugin = null;
@@ -72,26 +71,34 @@ public abstract class BasicCommand<T extends JavaPlugin> implements Registrable<
     }
 
     public @Nullable String getDescription() {
-        return this.description;
+        if (this.description != null) {
+            return I18n.has(this.description) ? I18n.tl(this.description) : this.description;
+        }
+
+        return null;
     }
 
-    public void setDescription(@NotNull final String description) {
+    public boolean hasDescription() {
+        return this.description != null;
+    }
+
+    public void setDescription(@Nullable final String description) {
         this.description = description;
     }
 
-    public @Nullable String getPermission() {
-        return this.permission != null ? this.permission : "";
-    }
-
-    public void setPermission(@NotNull final String permission) {
-        this.permission = permission;
-    }
-
     public @Nullable String getUsage() {
-        return this.usage != null ? this.usage : "";
+        if (this.usage != null) {
+            return I18n.has(this.usage) ? I18n.tl(this.usage) : this.usage;
+        }
+
+        return null;
     }
 
-    public void setUsage(@NotNull final String usage) {
+    public boolean hasUsage() {
+        return this.usage != null;
+    }
+
+    public void setUsage(@Nullable final String usage) {
         this.usage = usage;
     }
 
@@ -107,11 +114,12 @@ public abstract class BasicCommand<T extends JavaPlugin> implements Registrable<
      * </p>
      *
      * @param sender the source who executed the command.
+     * @param alias the alias that was used for the command.
      * @param arguments the passed arguments of the sender.
      * @return {@code true} if the execution was successful and valid.
      */
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    public abstract boolean execute(@NotNull final CommandSender sender,
+    public abstract boolean execute(@NotNull final CommandSender sender, @NotNull final String alias,
                                     @NotNull final String[] arguments);
 
     /**
@@ -125,16 +133,17 @@ public abstract class BasicCommand<T extends JavaPlugin> implements Registrable<
      * </p>
      *
      * @param sender the source who tab-completed the command.
+     * @param alias the alias that was used for the command.
      * @param arguments the passed arguments of the sender, including the final partial argument to be completed.
      * @return a list of possible completions for the final arguments.
      */
-    public abstract @NotNull List<String> tabComplete(@NotNull final CommandSender sender,
+    public abstract @NotNull List<String> tabComplete(@NotNull final CommandSender sender, @NotNull final String alias,
                                                       @NotNull final String[] arguments);
 
     @Override
     public @NotNull String toString() {
-        return this.getClass().getSimpleName() + "{name='" + this.name + "', minArgs=" + this.minArgs
-                + ", maxArgs=" + this.maxArgs + ", permission='" + this.permission + "'}";
+        return this.getClass().getSimpleName() + "{name='" + this.name + "', permission='" + this.permission
+                + "', minArgs=" + this.minArgs + ", maxArgs=" + this.maxArgs +  "}";
     }
 
     @Override
