@@ -151,13 +151,13 @@ public abstract class MainCommand<T extends JavaPlugin> extends BasicCommand<T> 
             }
         }
 
-        if (invalid || !this.argsInRange(arguments.length) || !this.execute(sender, alias, arguments)) {
-            if (this.hasUsage()) {
-                if (this.hasDescription()) {
-                    sender.sendMessage(Objects.requireNonNull(this.getDescription()));
+        if (invalid || !argsInRange(arguments.length) || !execute(sender, alias, arguments)) {
+            if (hasUsage()) {
+                if (hasDescription()) {
+                    sender.sendMessage(Objects.requireNonNull(getDescription()));
                 }
 
-                sender.sendMessage(Objects.requireNonNull(this.getUsage()).replace("<command>", alias));
+                sender.sendMessage(Objects.requireNonNull(getUsage()).replace("<command>", alias));
             }
         }
 
@@ -199,8 +199,8 @@ public abstract class MainCommand<T extends JavaPlugin> extends BasicCommand<T> 
             }
         }
 
-        if (this.argsInRange(arguments.length)) {
-            completions.addAll(this.tabComplete(sender, alias, arguments));
+        if (argsInRange(arguments.length)) {
+            completions.addAll(tabComplete(sender, alias, arguments));
         }
 
         Collections.sort(completions);
