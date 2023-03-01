@@ -22,6 +22,14 @@ public class Configuration extends YamlConfiguration {
         this.filename = filename;
     }
 
+    public @NotNull String getFilename() {
+        return this.filename;
+    }
+
+    public @NotNull Plugin getPlugin() {
+        return this.plugin;
+    }
+
     public void delete() {
         final File config = new File(this.plugin.getDataFolder(), this.filename);
 
