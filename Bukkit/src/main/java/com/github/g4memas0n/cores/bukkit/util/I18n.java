@@ -102,7 +102,7 @@ public final class I18n {
     }
 
     public @NotNull String format(@NotNull final String key, @NotNull final Object... arguments) {
-        final String format = this.translate(key);
+        final String format = translate(key);
 
         if (arguments.length > 0) {
             try {

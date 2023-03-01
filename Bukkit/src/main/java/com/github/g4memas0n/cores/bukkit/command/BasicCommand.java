@@ -142,7 +142,7 @@ public abstract class BasicCommand<T extends JavaPlugin> {
 
     @Override
     public @NotNull String toString() {
-        return this.getClass().getSimpleName() + "{name='" + this.name + "', permission='" + this.permission
+        return getClass().getSimpleName() + "{name='" + this.name + "', permission='" + this.permission
                 + "', minArgs=" + this.minArgs + ", maxArgs=" + this.maxArgs +  "}";
     }
 

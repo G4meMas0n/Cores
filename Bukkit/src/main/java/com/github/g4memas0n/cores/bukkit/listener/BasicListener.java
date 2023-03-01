@@ -39,7 +39,7 @@ public abstract class BasicListener<T extends JavaPlugin> implements Listener {
     public @NotNull String toString() {
         final List<String> events = new ArrayList<>();
 
-        for (final Method method : this.getClass().getMethods()) {
+        for (final Method method : getClass().getMethods()) {
             final EventHandler annotation = method.getAnnotation(EventHandler.class);
 
             if (annotation != null && method.getParameterCount() == 1) {
@@ -51,6 +51,6 @@ public abstract class BasicListener<T extends JavaPlugin> implements Listener {
             }
         }
 
-        return this.getClass().getSimpleName() + "{events=[" + String.join(";", events) + "]}";
+        return getClass().getSimpleName() + "{events=[" + String.join(";", events) + "]}";
     }
 }

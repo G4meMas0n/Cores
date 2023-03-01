@@ -8,9 +8,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-public abstract class Configuration {
+public class Configuration extends YamlConfiguration {
 
-    protected final YamlConfiguration storage;
     protected final String filename;
     protected final Plugin plugin;
 
@@ -21,19 +20,18 @@ public abstract class Configuration {
     public Configuration(@NotNull final Plugin plugin, @NotNull final String filename) {
         this.plugin = plugin;
         this.filename = filename;
-        this.storage = new YamlConfiguration();
     }
 
     public void delete() {
         final File config = new File(this.plugin.getDataFolder(), this.filename);
 
         if (!config.exists()) {
-            this.plugin.getLogger().warning("Unable to delete configuration file '" + config.getName() + "': Configuration file not found");
+            warning("Unable to delete configuration file '" + config.getName() + "': Configuration file not found");
             return;
         }
 
         if (config.delete()) {
-            this.plugin.getLogger().info("Deleted configuration file '" + config.getName() + "'");
+            info("Deleted configuration file '" + config.getName() + "'");
         }
     }
 
@@ -42,42 +40,43 @@ public abstract class Configuration {
         boolean loaded = false;
 
         try {
-            this.storage.load(config);
-            this.plugin.getLogger().info("Loaded configuration file '" + config.getName() + "'");
+            load(config);
+            info("Loaded configuration file '" + config.getName() + "'");
 
             loaded = true;
         } catch (InvalidConfigurationException ex) {
-            this.plugin.getLogger().warning("Unable to load configuration file '" + config.getName() + "': Configuration file is broken");
-
             final File broken = new File(config.getParent(), config.getName().replaceAll("(?i)(yml)$", "broken.$1"));
 
+            warning("Unable to load configuration file '" + config.getName() + "': Configuration file is broken");
             if (broken.exists() && broken.delete()) {
-                this.plugin.getLogger().info("Deleted old broken configuration file '" + broken.getName() + "'");
+                info("Deleted old broken configuration file '" + broken.getName() + "'");
             }
             if (config.renameTo(broken)) {
-                this.plugin.getLogger().info("Renamed broken configuration file '" + config.getName() + "' to '" + broken.getName() + "'");
+                info("Renamed broken configuration file '" + config.getName() + "' to '" + broken.getName() + "'");
             }
         } catch (FileNotFoundException ex) {
-            this.plugin.getLogger().warning("Unable to load configuration file '" + config.getName() + "': Configuration file not found");
+            warning("Unable to load configuration file '" + config.getName() + "': Configuration file not found");
         } catch (IOException ex) {
-            this.plugin.getLogger().warning("Unable to load configuration file '" + config.getName() + "': " + ex.getMessage());
+            warning("Unable to load configuration file '" + config.getName() + "': " + ex.getMessage());
         }
 
         if (!loaded) {
-            if (!config.exists()) {
-                this.plugin.saveResource(this.filename, true);
-
-                if (config.exists()) {
-                    this.plugin.getLogger().info("Saved default configuration file '" + config.getName() + "'");
-                }
-            }
-
             try {
-                this.storage.load(config);
-                this.plugin.getLogger().info("Loaded configuration file '" + config.getName() + "' on second try");
+                if (!config.exists()) {
+                    this.plugin.saveResource(this.filename, true);
+
+                    if (config.exists()) {
+                        info("Saved default configuration file '" + config.getName() + "'");
+                    }
+                }
+
+                load(config);
+                info("Loaded configuration file '" + config.getName() + "' on second try");
             } catch (FileNotFoundException ignored) {
             } catch (InvalidConfigurationException | IOException ex) {
-                this.plugin.getLogger().severe("Unable to load configuration file '" + config.getName() + "' on second try: " + ex.getMessage());
+                warning("Unable to load configuration file '" + config.getName() + "' on second try: " + ex.getMessage());
+            } catch (IllegalArgumentException ex) {
+                warning("Unable to find default configuration file '" + config.getName() + "'");
             }
         }
     }
@@ -86,10 +85,22 @@ public abstract class Configuration {
         final File config = new File(this.plugin.getDataFolder(), this.filename);
 
         try {
-            this.storage.save(config);
-            this.plugin.getLogger().info("Saved configuration file '" + config.getName() + "'");
+            save(config);
+            info("Saved configuration file '" + config.getName() + "'");
         } catch (IOException ex) {
-            this.plugin.getLogger().warning("Unable to save configuration file '" + config.getName() + "': " + ex.getMessage());
+            warning("Unable to save configuration file '" + config.getName() + "': " + ex.getMessage());
         }
+    }
+
+    /*
+     * Logging methods for improved code readability:
+     */
+
+    protected final void info(@NotNull final String message) {
+        this.plugin.getLogger().info(message);
+    }
+
+    protected final void warning(@NotNull final String message) {
+        this.plugin.getLogger().warning(message);
     }
 }
