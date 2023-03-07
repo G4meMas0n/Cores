@@ -1,0 +1,8 @@
+{
+    "batches": [
+        {
+            "id": "id.0",
+            "batch": "path/to/batch/file"
+        }
+    ]
+}

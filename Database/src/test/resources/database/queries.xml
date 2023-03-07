@@ -1,6 +1,0 @@
-<sql>
-    <queries>
-        <query id="query.0">FIRST SQL QUERY</query>
-        <query id="query.1">SECOND SQL QUERY</query>
-    </queries>
-</sql>

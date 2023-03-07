@@ -1,6 +1,5 @@
 package com.github.g4memas0n.cores.database.query;
 
-import com.google.gson.JsonSyntaxException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -15,63 +14,87 @@ public class JsonQueryLoaderTest {
         this.loader = new JsonQueryLoader();
     }
 
-    @Test
-    public void emptyFileLoadingTest() {
+    public void setupQueries() {
         try {
-            this.loader.load("database/queries-empty.json");
-            Assert.fail("Empty file loaded without exception");
+            this.loader.load("database/queries/queries.json");
         } catch (IOException ex) {
-            final Throwable cause = ex.getCause();
+            Assert.fail("Unexpected exception " + ex);
+        }
+    }
 
-            Assert.assertTrue("Cause is not an instance of JsonSyntaxException", cause instanceof JsonSyntaxException);
-            Assert.assertEquals("Expected at least one query, but count was zero", cause.getMessage());
+    @Test
+    public void illegalBatchesFileLoadingTest() {
+        try {
+            this.loader.load("database/queries/illegal-batches.json");
+            Assert.fail("loaded illegal batches file without exception");
+        } catch (IOException ex) {
+            Assert.assertNotNull(ex.getMessage());
+            Assert.assertTrue(ex.getMessage().contains("expected element of batches to be a json object"));
+        }
+    }
+
+    @Test
+    public void illegalQueriesFileLoadingTest() {
+        try {
+            this.loader.load("database/queries/illegal-queries.json");
+            Assert.fail("loaded illegal queries file without exception");
+        } catch (IOException ex) {
+            Assert.assertNotNull(ex.getMessage());
+            Assert.assertTrue(ex.getMessage().contains("expected element of queries to be a json object"));
         }
     }
 
     @Test
     public void illegalFileLoadingTest() {
         try {
-            this.loader.load("database/queries.xml");
-            Assert.fail("Illegal file loaded without exception");
-        } catch (IOException ignored) {
-
+            this.loader.load("database/queries/queries.txt");
+            Assert.fail("loaded illegal file without exception");
+        } catch (IOException ex) {
+            Assert.assertNotNull(ex.getMessage());
+            Assert.assertTrue(ex.getMessage().contains("unable to parse queries file"));
         }
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void illegalQueryLoadingTest() {
-        this.loader.loadQuery("query.0");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void missingFileLoadingTest() {
         try {
-            this.loader.load("database/missing-file.json");
+            this.loader.load("database/queries/missing.json");
         } catch (IOException ex) {
             Assert.fail("Unexpected exception " + ex);
         }
     }
 
-    @Test
-    public void missingQueryLoadingTest() {
-        try {
-            this.loader.load("database/queries.json");
+    @Test(expected = IllegalStateException.class)
+    public void illegalBatchLoadingTest() {
+        this.loader.loadBatch("id.0");
+    }
 
-            Assert.assertNull(this.loader.loadQuery("query.2"));
-        } catch (IOException ex) {
-            Assert.fail("Unexpected exception " + ex);
-        }
+    @Test(expected = IllegalStateException.class)
+    public void illegalQueryLoadingTest() {
+        this.loader.loadQuery("id.0");
     }
 
     @Test
-    public void successfulFileQueryLoadingTest() {
-        try {
-            this.loader.load("database/queries.json");
+    public void getBatchLoadingTest() {
+        setupQueries();
+        String batch;
 
-            Assert.assertEquals("FIRST SQL QUERY", loader.getQuery("query.0"));
-            Assert.assertEquals("SECOND SQL QUERY", loader.getQuery("query.1"));
-        } catch (IOException ex) {
-            Assert.fail("Unexpected exception " + ex);
-        }
+        Assert.assertNotNull(batch = this.loader.loadBatch("id.0"));
+        Assert.assertEquals(batch, "path/to/batch/file");
+        Assert.assertNotNull(batch = this.loader.loadBatch("id.1"));
+        Assert.assertEquals(batch, "path/to/another/batch/file");
+        Assert.assertNull(this.loader.loadBatch("id.2"));
+    }
+
+    @Test
+    public void getQueryLoadingTest() {
+        setupQueries();
+        String query;
+
+        Assert.assertNotNull(query = this.loader.loadQuery("id.0"));
+        Assert.assertEquals(query, "FIRST SQL QUERY");
+        Assert.assertNotNull(query = this.loader.loadQuery("id.1"));
+        Assert.assertEquals(query, "SECOND SQL QUERY");
+        Assert.assertNull(this.loader.loadQuery("id.2"));
     }
 }

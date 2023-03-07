@@ -8,7 +8,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import com.google.gson.JsonSyntaxException;
 import org.jetbrains.annotations.NotNull;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -57,63 +56,70 @@ public class JsonDriverLoader extends DriverLoader {
 
     @Override
     public void load(@NotNull final String path) throws IOException {
-        final InputStream stream = this.getClass().getClassLoader().getResourceAsStream(path);
-        Preconditions.checkArgument(stream != null, "Missing file at path " + path);
+        final InputStream stream = getClass().getClassLoader().getResourceAsStream(path);
+        Preconditions.checkArgument(stream != null, "missing file at " + path);
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
             JsonObject root = this.gson.fromJson(reader, JsonObject.class);
             JsonElement element = root.get("drivers");
 
-            if (element == null) {
-                throw new JsonSyntaxException("Expected drivers key in the root JsonObject, but was missing");
-            }
-
-            if (element.isJsonArray()) {
-                this.root = element.getAsJsonArray();
-
-                if (this.root.size() == 0) {
-                    this.root = null;
-                    throw new JsonSyntaxException("Expected at least one driver, but count was zero");
+            if (element != null) {
+                if (!element.isJsonArray()) {
+                    throw new JsonParseException("expected element of drivers to be a json array");
                 }
+
+                this.root = element.getAsJsonArray();
+                this.path = path;
             } else {
-                throw new JsonSyntaxException("Expected driver key to be a JsonArray, but was " + element.getClass().getName());
+                throw new JsonParseException("expected drivers key in the root JsonObject, but was missing");
             }
         } catch (JsonParseException ex) {
-            throw new IOException("Unable to parse driver file at " + path, ex);
+            throw new IOException("unable to parse driver file at " + path + ": " + ex.getMessage(), ex);
         }
     }
 
     @Override
     public @NotNull List<Driver> loadDrivers() {
-        Preconditions.checkState(this.root != null, "The driver file has not been loaded yet");
-
-        return this.loadDrivers("*"); // Using wildcard driver type
+        Preconditions.checkState(this.root != null, "no driver file have been loaded yet");
+        return loadDrivers("*"); // Using wildcard driver type
     }
 
     @Override
     public @NotNull List<Driver> loadDrivers(@NotNull final String type) {
-        Preconditions.checkState(this.root != null, "The driver file has not been loaded yet");
+        Preconditions.checkState(this.root != null, "no driver file have been loaded yet");
         final Iterator<JsonElement> iterator = this.root.iterator();
         final List<Driver> drivers = new LinkedList<>(); // Using linked list because it will most likely be iterated
+        Properties properties;
+        JsonElement element;
+        JsonObject entry;
+        Driver driver;
 
         while (iterator.hasNext()) {
-            JsonObject entry = iterator.next().getAsJsonObject();
+            if (!(element = iterator.next()).isJsonObject()) {
+                DatabaseManager.getLogger().warning("Skipping illegal json element in driver file " + this.path);
+                continue;
+            }
 
-            if (!entry.has("type") || !entry.has("class")) {
+            entry = element.getAsJsonObject();
+            if (!entry.has("class") || !entry.has("type")) {
+                DatabaseManager.getLogger().warning("Skipping invalid json object with missing class or type key in driver file " + this.path);
                 continue;
             }
 
             try {
                 if (type.equals("*") || entry.get("type").getAsString().equalsIgnoreCase(type)) {
-                    Driver driver = new Driver(entry.get("type").getAsString(), entry.get("class").getAsString(),
-                            entry.has("url") ? entry.get("url").getAsString() : null,
-                            entry.has("queries") ? entry.get("queries").getAsString() : null);
+                    driver = new Driver(Class.forName(entry.get("class").getAsString()), entry.get("type").getAsString(),
+                            entry.has("url") ? entry.get("url").getAsString() : null);
+
+                    if (entry.has("queries")) {
+                        driver.setQueries(entry.get("queries").getAsString());
+                    }
 
                     if (entry.has("properties")) {
-                        JsonObject entryProperties = entry.get("properties").getAsJsonObject();
-                        Properties properties = new Properties();
+                        entry = entry.get("properties").getAsJsonObject();
+                        properties = new Properties();
 
-                        for (Entry<String, JsonElement> property : entryProperties.entrySet()) {
+                        for (Entry<String, JsonElement> property : entry.entrySet()) {
                             if (property.getValue().isJsonPrimitive()) {
                                 properties.setProperty(property.getKey(), property.getValue().getAsString());
                             }
@@ -124,8 +130,10 @@ public class JsonDriverLoader extends DriverLoader {
 
                     drivers.add(driver);
                 }
-            } catch (IllegalStateException ex) {
+            } catch (UnsupportedOperationException ex) {
                 DatabaseManager.getLogger().log(Level.WARNING, "Skipping invalid json object in driver file " + this.path, ex);
+            } catch (ClassNotFoundException ex) {
+                DatabaseManager.getLogger().log(Level.WARNING, "Could not find class in driver file " + this.path, ex);
             }
         }
 

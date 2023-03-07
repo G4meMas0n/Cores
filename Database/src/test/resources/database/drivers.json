@@ -10,8 +10,8 @@
             "class": "org.sqlite.SQLiteDataSource",
             "type": "SQLite",
             "properties": {
-                "encoding": "UTF-8",
-                "url": "Data Source={Path}/storage/database.db"
+                "dataSource.encoding": "UTF-8",
+                "dataSource.url": "Data Source={Path}/storage/database.db"
             }
         }
     ]

@@ -19,9 +19,9 @@ public class QueryLoaderTest {
         QueryLoader loader;
 
         if (this.random.nextBoolean()) {
-            loader = QueryLoader.loadFile("database/queries.json");
+            loader = QueryLoader.loadFile("database/queries/queries.json");
         } else {
-            loader = QueryLoader.loadFile("database/queries.xml");
+            loader = QueryLoader.loadFile("database/queries/queries.xml");
         }
 
         loader.getQuery("query.2");
@@ -32,17 +32,17 @@ public class QueryLoaderTest {
         QueryLoader loader;
 
         if (this.random.nextBoolean()) {
-            loader = QueryLoader.loadFile("database/queries.json");
+            loader = QueryLoader.loadFile("database/queries/queries.json");
         } else {
-            loader = QueryLoader.loadFile("database/queries.xml");
+            loader = QueryLoader.loadFile("database/queries/queries.xml");
         }
 
-        Assert.assertEquals("FIRST SQL QUERY", loader.getQuery("query.0"));
-        Assert.assertEquals("SECOND SQL QUERY", loader.getQuery("query.1"));
+        Assert.assertEquals("FIRST SQL QUERY", loader.getQuery("id.0"));
+        Assert.assertEquals("SECOND SQL QUERY", loader.getQuery("id.1"));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void unsupportedExtensionLoadTest() {
-        QueryLoader.loadFile("database/queries.txt");
+        QueryLoader.loadFile("database/queries/queries.txt");
     }
 }

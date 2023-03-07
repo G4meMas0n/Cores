@@ -20,12 +20,14 @@ import java.util.logging.Level;
  * An implementing query loader that loads the mapping from a xml file.<br>
  * This loader will only accept xml files that are formed like this:
  * <pre><code>
- * {@literal <any_root_tag>}
- *     {@literal <queries>}
- *         {@literal <query id="identifier">SQL Query</query>}
- *         {@literal <query id="another.identifier">Another SQL Query</query>}
- *     {@literal </queries>}
- * {@literal </any_root_tag>}
+ * {@literal <batches>}
+ *     {@literal <batch id="identifier1">path/to/batch/file</batch>}
+ *     {@literal <batch id="identifier2">path/to/another/batch/file</batch>}
+ * {@literal </batches>}
+ * {@literal <queries>}
+ *     {@literal <query id="identifier3">SQL Query</query>}
+ *     {@literal <query id="identifier4">Another SQL Query</query>}
+ * {@literal </queries>}
  * </code></pre>
  *
  * @since 1.0.0
@@ -33,7 +35,8 @@ import java.util.logging.Level;
 public class XmlQueryLoader extends QueryLoader {
 
     private final DocumentBuilderFactory factory;
-    private Element root;
+    private Element batches;
+    private Element queries;
 
     /**
      * Public constructor for creating a query loader that reads xml files.
@@ -51,39 +54,65 @@ public class XmlQueryLoader extends QueryLoader {
 
     @Override
     public void load(@NotNull final String path) throws IOException {
-        final InputStream stream = this.getClass().getClassLoader().getResourceAsStream(path);
-        Preconditions.checkArgument(stream != null, "Missing file at path " + path);
+        final InputStream stream = getClass().getClassLoader().getResourceAsStream(path);
+        Preconditions.checkArgument(stream != null, "missing file at " + path);
 
         try {
             final DocumentBuilder builder = this.factory.newDocumentBuilder();
             final Document document = builder.parse(stream);
+            NodeList nodes;
 
             document.normalize();
 
-            final NodeList nodes = document.getElementsByTagName("queries");
-
+            nodes = document.getElementsByTagName("batches");
             if (nodes.getLength() > 0) {
-                this.root = (Element) nodes.item(0);
-
-                if (this.root.getElementsByTagName("query").getLength() == 0) {
-                    this.root = null;
-                    throw new SAXException("Expected at least one query tag, but count was zero");
+                if (nodes.getLength() > 1) {
+                    throw new SAXException("expected maximal one branches tag");
                 }
-            } else {
-                throw new SAXException("Expected queries tag in the xml document, but was missing");
+
+                this.batches = (Element) nodes.item(0);
             }
+
+            nodes = document.getElementsByTagName("queries");
+            if (nodes.getLength() > 0) {
+                if (nodes.getLength() > 1) {
+                    throw new SAXException("expected maximal one queries tag");
+                }
+
+                this.queries = (Element) nodes.item(0);
+            }
+
+            this.path = path;
         } catch (ParserConfigurationException | SAXException ex) {
-            throw new IOException("Unable to parse queries file at " + path, ex);
+            throw new IOException("unable to parse queries file at " + path + ": " + ex.getMessage(), ex);
         }
     }
 
     @Override
-    public @Nullable String loadQuery(@NotNull final String identifier) {
-        Preconditions.checkState(this.root != null, "The queries file has not been loaded yet");
-        final NodeList queries = this.root.getElementsByTagName("query");
+    protected @Nullable String loadBatch(@NotNull final String identifier) {
+        Preconditions.checkState(this.batches != null, "no batches have been loaded yet");
+        final NodeList nodes = this.batches.getElementsByTagName("batch");
+        Element batch;
 
-        for (int index = 0; index < queries.getLength(); index++) {
-            Element query = (Element) queries.item(index);
+        for (int index = 0; index < nodes.getLength(); index++) {
+            batch = (Element) nodes.item(0);
+
+            if (batch.getAttribute("id").equals(identifier)) {
+                return batch.getTextContent();
+            }
+        }
+
+        return null;
+    }
+
+    @Override
+    protected @Nullable String loadQuery(@NotNull final String identifier) {
+        Preconditions.checkState(this.queries != null, "no queries have been loaded yet");
+        final NodeList nodes = this.queries.getElementsByTagName("query");
+        Element query;
+
+        for (int index = 0; index < nodes.getLength(); index++) {
+            query = (Element) nodes.item(index);
 
             if (query.getAttribute("id").equals(identifier)) {
                 return query.getTextContent();

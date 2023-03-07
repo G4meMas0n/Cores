@@ -6,8 +6,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSyntaxException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import java.io.BufferedReader;
@@ -21,9 +19,13 @@ import java.nio.charset.StandardCharsets;
  * This loader will only accept json files that are formed like this:
  * <pre><code>
  * {
+ *     "batches": {
+ *         "identifier1": "path/to/batch/file",
+ *         "identifier2": "path/to/another/batch/file"
+ *     },
  *     "queries": {
- *         "identifier": "SQL Query",
- *         "another.identifier": "Another SQL Query"
+ *         "identifier3": "SQL Query",
+ *         "identifier4": "Another SQL Query"
  *     }
  * }
  * </code></pre>
@@ -44,41 +46,62 @@ public class JsonQueryLoader extends QueryLoader {
 
     @Override
     public void load(@NotNull final String path) throws IOException {
-        final InputStream stream = this.getClass().getClassLoader().getResourceAsStream(path);
-        Preconditions.checkArgument(stream != null, "Missing file at path " + path);
+        final InputStream stream = getClass().getClassLoader().getResourceAsStream(path);
+        Preconditions.checkArgument(stream != null, "missing file at " + path);
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
             JsonObject root = this.gson.fromJson(reader, JsonObject.class);
-            JsonElement element = root.get("queries");
 
-            if (element == null) {
-                throw new JsonSyntaxException("Expected queries key in the root JsonObject, but was missing");
-            }
-
-            if (element.isJsonObject()) {
-                this.root = element.getAsJsonObject();
-
-                if (this.root.size() == 0) {
-                    this.root = null;
-                    throw new JsonSyntaxException("Expected at least one query, but count was zero");
+            if (root.has("batches")) {
+                if (!root.get("batches").isJsonObject()) {
+                    throw new JsonParseException("expected element of batches to be a json object");
                 }
-            } else {
-                throw new JsonSyntaxException("Expected queries key to be a JsonObject, but was " + element.getClass().getName());
             }
+
+            if (root.has("queries")) {
+                if (!root.get("queries").isJsonObject()) {
+                    throw new JsonParseException("expected element of queries to be a json object");
+                }
+            }
+
+            this.path = path;
+            this.root = root;
         } catch (JsonParseException ex) {
-            throw new IOException("Unable to parse queries file at " + path, ex);
+            throw new IOException("unable to parse queries file at " + path + ": " + ex.getMessage(), ex);
         }
     }
 
     @Override
-    public @Nullable String loadQuery(@NotNull final String identifier) {
-        Preconditions.checkState(this.root != null, "The queries file has not been loaded yet");
-        final JsonElement element = this.root.get(identifier);
+    protected @Nullable String loadBatch(@NotNull final String identifier) {
+        Preconditions.checkState(this.root != null, "no queries file has been loaded yet");
+        final JsonObject batches = this.root.getAsJsonObject("batches");
 
-        if (element != null && element.isJsonPrimitive()) {
-            final JsonPrimitive primitive = element.getAsJsonPrimitive();
+        if (batches != null) {
+            final JsonElement element = batches.get(identifier);
 
-            return primitive.isString() ? primitive.getAsString() : null;
+            if (element != null && element.isJsonPrimitive()) {
+                return element.getAsJsonPrimitive().getAsString();
+            }
+        } else {
+            throw new IllegalStateException("no batches have been loaded yet");
+        }
+
+        return null;
+    }
+
+    @Override
+    protected @Nullable String loadQuery(@NotNull final String identifier) {
+        Preconditions.checkState(this.root != null, "no queries file have been loaded yet");
+        final JsonObject queries = this.root.getAsJsonObject("queries");
+
+        if (queries != null) {
+            final JsonElement element = queries.get(identifier);
+
+            if (element != null && element.isJsonPrimitive()) {
+                return element.getAsJsonPrimitive().getAsString();
+            }
+        } else {
+            throw new IllegalStateException("no queries have been loaded yet");
         }
 
         return null;

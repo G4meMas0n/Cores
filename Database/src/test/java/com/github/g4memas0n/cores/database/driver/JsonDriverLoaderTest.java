@@ -1,12 +1,10 @@
 package com.github.g4memas0n.cores.database.driver;
 
-import com.google.gson.JsonSyntaxException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import java.io.IOException;
 import java.util.List;
-import java.util.Properties;
 
 public class JsonDriverLoaderTest {
 
@@ -17,16 +15,11 @@ public class JsonDriverLoaderTest {
         this.loader = new JsonDriverLoader();
     }
 
-    @Test
-    public void emptyFileLoadingTest() {
+    public void setupDrivers() {
         try {
-            this.loader.load("database/drivers-empty.json");
-            Assert.fail("Empty file loaded without exception");
+            this.loader.load("database/drivers.json");
         } catch (IOException ex) {
-            final Throwable cause = ex.getCause();
-
-            Assert.assertTrue("Cause is not an instance of JsonSyntaxException", cause instanceof JsonSyntaxException);
-            Assert.assertEquals("Expected at least one driver, but count was zero", cause.getMessage());
+            Assert.fail("Unexpected exception " + ex);
         }
     }
 
@@ -34,17 +27,11 @@ public class JsonDriverLoaderTest {
     public void illegalFileLoadingTest() {
         try {
             this.loader.load("database/drivers-illegal.json");
-            Assert.fail("Empty file loaded without exception");
+            Assert.fail("loaded illegal file without exception");
         } catch (IOException ex) {
-            final Throwable cause = ex.getCause();
-
-            Assert.assertTrue("Cause is not an instance of JsonSyntaxException", cause instanceof JsonSyntaxException);
+            Assert.assertNotNull(ex.getMessage());
+            Assert.assertTrue(ex.getMessage().contains("expected element of drivers to be a json array"));
         }
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void illegalDriverLoadingTest() {
-        this.loader.loadDrivers();
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -56,28 +43,22 @@ public class JsonDriverLoaderTest {
         }
     }
 
+    @Test(expected = IllegalStateException.class)
+    public void illegalDriverLoadingTest() {
+        this.loader.loadDrivers();
+    }
+
     @Test
-    public void successfulFileDriverLoadingTest() {
-        try {
-            this.loader.load("database/drivers.json");
-            final List<Driver> drivers = this.loader.loadDrivers("SQLite");
+    public void getMySQLDriverLoadingTest() {
+        this.setupDrivers();
 
-            Assert.assertEquals(1, drivers.size());
+        final List<Driver> drivers = this.loader.loadDrivers("MySQL");
 
-            Driver driver = drivers.get(0);
-            Assert.assertEquals("SQLite", driver.getType());
-            Assert.assertEquals("org.sqlite.SQLiteDataSource", driver.getClassName());
-            Assert.assertNull(driver.getJdbcUrl());
-            Assert.assertNull(driver.getQueries());
-            Assert.assertNotNull(driver.getProperties());
-
-            Properties properties = driver.getProperties();
-            Assert.assertNotNull(properties.getProperty("encoding"));
-            Assert.assertEquals("UTF-8", properties.getProperty("encoding"));
-            Assert.assertNotNull(properties.getProperty("url"));
-            Assert.assertEquals("Data Source={Path}/storage/database.db", properties.get("url"));
-        } catch (IOException ex) {
-            Assert.fail("Unexpected exception " + ex);
-        }
+        Assert.assertEquals(1, drivers.size());
+        Assert.assertEquals("MySQL", drivers.get(0).getType());
+        Assert.assertEquals(com.mysql.cj.jdbc.Driver.class, drivers.get(0).getSource());
+        Assert.assertNotNull(drivers.get(0).getJdbcUrl());
+        Assert.assertNotNull(drivers.get(0).getQueries());
+        Assert.assertNull(drivers.get(0).getProperties());
     }
 }

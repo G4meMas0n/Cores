@@ -4,11 +4,10 @@ import com.google.common.base.Preconditions;
 import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * A loader for files, that contains driver information for sql databases.<br>
- * The loading of the file and of the drivers will be handled by the implementing class.
+ * The loading and parsing of the file and of the drivers will be handled by the implementing class.
  *
  * @since 1.0.0
  */
@@ -37,15 +36,16 @@ public abstract class DriverLoader {
 
     /**
      * Loads all drivers from the loaded driver file regardless of the database type.<br>
-     * The list returned by this method cannot be empty, as empty driver files are not allowed.
+     * The list returned by this method may be empty if no driver could be loaded successfully.
      *
      * @return a list containing the all loaded drivers.
      */
     public abstract @NotNull List<Driver> loadDrivers();
 
     /**
-     * Loads all drivers from the loaded driver file that matches with the given database {@code type}.<br>
-     * The list returned by this method may be empty if no matching driver has been found.
+     * Loads all drivers from the loaded driver file that matches the given database {@code type}.<br>
+     * The list returned by this method may be empty if no matching driver has been found or no found driver could be
+     * loaded successfully.
      *
      * @param type the driver type that the drivers must match.
      * @return a list containing the all loaded drivers for the given database {@code type}.
@@ -62,10 +62,10 @@ public abstract class DriverLoader {
      * be loaded.
      */
     public static @NotNull DriverLoader loadFile(@NotNull final String path) {
-        Preconditions.checkArgument(!path.isBlank(), "Path cannot be blank");
-        final String lowered = path.toLowerCase(Locale.ROOT);
+        Preconditions.checkArgument(path.contains("."), "file path is missing file extension");
+        final String extension = path.substring(path.lastIndexOf("."));
 
-        if (lowered.endsWith(".json")) {
+        if (extension.equalsIgnoreCase(".json")) {
             final DriverLoader loader = new JsonDriverLoader();
 
             try {
@@ -73,10 +73,10 @@ public abstract class DriverLoader {
 
                 return loader;
             } catch (IOException ex) {
-                throw new IllegalArgumentException("Driver file at given path cannot be parsed", ex);
+                throw new IllegalArgumentException("driver file at given path cannot be parsed", ex);
             }
         }
 
-        throw new IllegalArgumentException("Missing or unsupported driver file extension");
+        throw new IllegalArgumentException("missing or unsupported driver file extension");
     }
 }

@@ -1,0 +1,8 @@
+<sql>
+    <batches>
+        <batch id="id.0">path/to/batch/file</batch>
+    </batches>
+    <batches>
+        <batch id="id.1">path/to/another/batch/file</batch>
+    </batches>
+</sql>

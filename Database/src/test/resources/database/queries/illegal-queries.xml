@@ -1,0 +1,8 @@
+<sql>
+    <queries>
+        <query id="id.0">FIRST SQL QUERY</query>
+    </queries>
+    <queries>
+        <query id="id.1">SECOND SQL QUERY</query>
+    </queries>
+</sql>

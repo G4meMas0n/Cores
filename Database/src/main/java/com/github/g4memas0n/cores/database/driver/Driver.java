@@ -12,67 +12,71 @@ import java.util.Properties;
  */
 public class Driver {
 
+    private final Class<?> source;
     private final String type;
-    private final String clazz;
     private final String url;
-    private final String queries;
 
     private Properties properties;
+    private String queries;
 
     /**
-     * Public constructor for creating a driver information.
+     * Public constructor for creating a driver representation.
      *
+     * @param source the driver class implementing {@link java.sql.Driver} or {@link javax.sql.DataSource}.
      * @param type the type of the database driver like 'MySQL' and/or 'SQLite', etc...
-     * @param clazz the driver class implementing either {@link java.sql.Driver} or {@link javax.sql.DataSource}.
-     * @param url the jdbc url for the driver class or null if the driver implements {@link javax.sql.DataSource}.
-     * @param queries the path to the file containing sql queries or null.
+     * @param url the jdbc url for the driver class or null if not required.
      */
-    public Driver(@NotNull final String type, @NotNull final String clazz,
-                  @Nullable final String url, @Nullable final String queries) {
+    public Driver(@NotNull final Class<?> source, @NotNull final String type, @Nullable final String url) {
+        this.source = source;
         this.type = type;
-        this.clazz = clazz;
         this.url = url;
-        this.queries = queries;
-        this.properties = null;
     }
 
     /**
-     * Returns the database type for that this driver information is.
+     * Public constructor for creating a driver representation.
      *
-     * @return the database type of the driver information.
+     * @param clazz the name of a driver class implementing {@link java.sql.Driver} or {@link javax.sql.DataSource}.
+     * @param type the type of the database driver like 'MySQL' and/or 'SQLite', etc...
+     * @param url the jdbc url for the driver class or null if not required.
+     */
+    public Driver(@NotNull final String clazz, @NotNull final String type, @Nullable final String url) {
+        try {
+            this.source = Class.forName(clazz);
+        } catch (ClassNotFoundException ex) {
+            throw new IllegalArgumentException("class not found");
+        }
+
+        this.type = type;
+        this.url = url;
+    }
+
+    /**
+     * Returns the source class of this driver representation.<br>
+     * This class normally implements the {@link java.sql.Driver} or {@link javax.sql.DataSource} interface.
+     *
+     * @return the source class of the driver.
+     */
+    public @NotNull Class<?> getSource() {
+        return this.source;
+    }
+
+    /**
+     * Returns the database type that this driver representation is for.
+     *
+     * @return the database type of the driver.
      */
     public @NotNull String getType() {
         return this.type;
     }
 
     /**
-     * Returns the full class name of this driver information that either implements the {@link java.sql.Driver}
-     * interface or the {@link javax.sql.DataSource} interface.
-     *
-     * @return the full name of the driver class.
-     */
-    public @NotNull String getClassName() {
-        return this.clazz;
-    }
-
-    /**
-     * Returns the jdbc url of this driver information.<br>
-     * May be null if the class specified by this driver information implements {@link javax.sql.DataSource} instead
-     * of {@link java.sql.Driver}.
+     * Returns the jdbc url of this driver representation.<br>
+     * May be null if the source class specified by this driver implements {@link javax.sql.DataSource}.
      *
      * @return the jdbc url for the driver class.
      */
     public @Nullable String getJdbcUrl() {
         return this.url;
-    }
-
-    /**
-     * Returns the path to a file containing sql queries or null if it is not specified.
-     *
-     * @return the path to a queries file.
-     */
-    public @Nullable String getQueries() {
-        return this.queries;
     }
 
     /**
@@ -87,19 +91,36 @@ public class Driver {
     }
 
     /**
-     * Sets the properties for the driver class that will be used if the driver class implements
+     * Sets or removes the properties for the driver class that will be used if the driver class implements
      * {@link javax.sql.DataSource}.
      *
-     * @param properties the new properties for the data source driver.
+     * @param properties the new properties for the data source driver or null.
      */
     public void setProperties(@Nullable final Properties properties) {
         this.properties = properties;
     }
 
+    /**
+     * Returns the path to a file containing sql queries or null if it is not specified.
+     *
+     * @return the path to a queries file.
+     */
+    public @Nullable String getQueries() {
+        return this.queries;
+    }
+
+    /**
+     * Sets or removes the path to a file containing sql queries.
+     *
+     * @param queries the new path to a queries file or null.
+     */
+    public void setQueries(@Nullable final String queries) {
+        this.queries = queries;
+    }
+
     @Override
     public @NotNull String toString() {
-        return "Driver{type='" + this.type + "', clazz='" + this.clazz + "', url='" + this.url
-                + "', queries='" + this.queries + "', properties=" + this.properties + "}";
+        return "Driver{source='" + this.source + "', type='" + this.type + "', url='" + this.url + "'}";
     }
 
     @Override
@@ -113,11 +134,11 @@ public class Driver {
         }
 
         final Driver driver = (Driver) object;
-        return this.type.equals(driver.type) && this.clazz.equals(driver.clazz);
+        return this.source.equals(driver.source);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.type, this.clazz);
+        return Objects.hash(this.source);
     }
 }
