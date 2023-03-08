@@ -1,6 +1,5 @@
 package com.github.g4memas0n.cores.database.query;
 
-import com.github.g4memas0n.cores.database.DatabaseManager;
 import com.google.common.base.Preconditions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -16,17 +15,22 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.Level;
 
+import static com.github.g4memas0n.cores.database.DatabaseManager.getLogger;
+
 /**
  * An implementing query loader that loads the mapping from a xml file.<br>
  * This loader will only accept xml files that are formed like this:
  * <pre><code>
+ * {@literal <options>}
+ *     {@literal <parent>path/to/parent/file</parent>}
+ * {@literal </options>}
  * {@literal <batches>}
- *     {@literal <batch id="identifier1">path/to/batch/file</batch>}
- *     {@literal <batch id="identifier2">path/to/another/batch/file</batch>}
+ *     {@literal <batch id="identifier.one">path/to/batch/file</batch>}
+ *     {@literal <batch id="identifier.two">path/to/another/batch/file</batch>}
  * {@literal </batches>}
  * {@literal <queries>}
- *     {@literal <query id="identifier3">SQL Query</query>}
- *     {@literal <query id="identifier4">Another SQL Query</query>}
+ *     {@literal <query id="identifier.one">SQL Query</query>}
+ *     {@literal <query id="identifier.two">Another SQL Query</query>}
  * {@literal </queries>}
  * </code></pre>
  *
@@ -48,7 +52,7 @@ public class XmlQueryLoader extends QueryLoader {
             this.factory.setIgnoringComments(true);
             this.factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
         } catch (ParserConfigurationException ex) {
-            DatabaseManager.getLogger().log(Level.WARNING, "Failed to enable secure xml processing", ex);
+            getLogger().log(Level.SEVERE, "Failed to enable secure xml processing", ex);
         }
     }
 
@@ -82,9 +86,26 @@ public class XmlQueryLoader extends QueryLoader {
                 this.queries = (Element) nodes.item(0);
             }
 
+            nodes = document.getElementsByTagName("options");
+            if (nodes.getLength() > 0) {
+                if (nodes.getLength() > 1) {
+                    throw new SAXException("expected maximal one options tag");
+                }
+
+                NodeList parent = ((Element) nodes.item(0)).getElementsByTagName("parent");
+
+                if (parent.getLength() > 0) {
+                    if (parent.getLength() > 1) {
+                        throw new SAXException("expected maximal one parent tag");
+                    }
+
+                    this.parent = QueryLoader.loadFile(parent.item(0).getTextContent());
+                }
+            }
+
             this.path = path;
         } catch (ParserConfigurationException | SAXException ex) {
-            throw new IOException("unable to parse queries file at " + path + ": " + ex.getMessage(), ex);
+            throw new IOException("queries file " + path + " could not be parsed", ex);
         }
     }
 

@@ -1,0 +1,10 @@
+{
+    "batches": {
+        "identifier.one": "path/to/batch/file",
+        "identifier.two": "path/to/another/batch/file"
+    },
+    "queries": {
+        "identifier.one": "FIRST SQL QUERY",
+        "identifier.two": "SECOND SQL QUERY"
+    }
+}

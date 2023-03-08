@@ -14,18 +14,23 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
+import static com.github.g4memas0n.cores.database.DatabaseManager.getLogger;
+
 /**
  * An implementing query loader that loads the mapping from a json file.<br>
  * This loader will only accept json files that are formed like this:
  * <pre><code>
  * {
+ *     "options": {
+ *         "parent": "path/to/parent/file"
+ *     }
  *     "batches": {
- *         "identifier1": "path/to/batch/file",
- *         "identifier2": "path/to/another/batch/file"
+ *         "identifier.one": "path/to/batch/file",
+ *         "identifier.two": "path/to/another/batch/file"
  *     },
  *     "queries": {
- *         "identifier3": "SQL Query",
- *         "identifier4": "Another SQL Query"
+ *         "identifier.one": "SQL Query",
+ *         "identifier.two": "Another SQL Query"
  *     }
  * }
  * </code></pre>
@@ -64,10 +69,22 @@ public class JsonQueryLoader extends QueryLoader {
                 }
             }
 
+            if (root.has("options")) {
+                if (!root.get("options").isJsonObject()) {
+                    throw new JsonParseException("expected element of options to be a json object");
+                }
+
+                JsonElement parent = root.getAsJsonObject("options").get("parent");
+
+                if (parent != null && parent.isJsonPrimitive()) {
+                    this.parent = QueryLoader.loadFile(parent.getAsString());
+                }
+            }
+
             this.path = path;
             this.root = root;
         } catch (JsonParseException ex) {
-            throw new IOException("unable to parse queries file at " + path + ": " + ex.getMessage(), ex);
+            throw new IOException("queries file " + path + " could not be parsed", ex);
         }
     }
 
@@ -79,8 +96,12 @@ public class JsonQueryLoader extends QueryLoader {
         if (batches != null) {
             final JsonElement element = batches.get(identifier);
 
-            if (element != null && element.isJsonPrimitive()) {
-                return element.getAsJsonPrimitive().getAsString();
+            if (element != null) {
+                if (element.isJsonPrimitive()) {
+                    return element.getAsString();
+                }
+
+                getLogger().severe("Skipping illegal batch element " + identifier + " in queries file: " + this.path);
             }
         } else {
             throw new IllegalStateException("no batches have been loaded yet");
@@ -97,8 +118,12 @@ public class JsonQueryLoader extends QueryLoader {
         if (queries != null) {
             final JsonElement element = queries.get(identifier);
 
-            if (element != null && element.isJsonPrimitive()) {
-                return element.getAsJsonPrimitive().getAsString();
+            if (element != null) {
+                if (element.isJsonPrimitive()) {
+                    return element.getAsString();
+                }
+
+                getLogger().severe("Skipping illegal query element " + identifier + " in queries file: " + this.path);
             }
         } else {
             throw new IllegalStateException("no queries have been loaded yet");

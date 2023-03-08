@@ -2,23 +2,34 @@ package com.github.g4memas0n.cores.database.driver;
 
 import org.junit.Assert;
 import org.junit.Test;
+import java.io.IOException;
 
 public class DriverLoaderTest {
 
     @Test(expected = IllegalArgumentException.class)
-    public void missingExtensionLoadTest() {
-        DriverLoader.loadFile("database/drivers");
-    }
-
-    @Test
-    public void successfulDriverLoadTest() {
-        final DriverLoader loader = DriverLoader.loadFile("database/drivers.json");
-
-        Assert.assertTrue(loader instanceof JsonDriverLoader);
+    public void loadMissingExtensionTest() {
+        try {
+            DriverLoader.loadFile("database/drivers");
+        } catch (IOException ex) {
+            Assert.fail("Unexpected exception: " + ex.getMessage());
+        }
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void unsupportedExtensionLoadTest() {
-        DriverLoader.loadFile("database/drivers.txt");
+    public void loadUnknownExtensionTest() {
+        try {
+            DriverLoader.loadFile("database/drivers.txt");
+        } catch (IOException ex) {
+            Assert.fail("Unexpected exception: " + ex.getMessage());
+        }
+    }
+
+    @Test
+    public void loadSuccessfulTest() {
+        try {
+            DriverLoader.loadFile("database/drivers.json");
+        } catch (IOException ex) {
+            Assert.fail("Unexpected exception: " + ex.getMessage());
+        }
     }
 }

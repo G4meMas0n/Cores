@@ -1,0 +1,10 @@
+<sql>
+    <batches>
+        <batch id="identifier.one">path/to/batch/file</batch>
+        <batch id="identifier.two">path/to/another/batch/file</batch>
+    </batches>
+    <queries>
+        <query id="identifier.one">FIRST SQL QUERY</query>
+        <query id="identifier.two">SECOND SQL QUERY</query>
+    </queries>
+</sql>

@@ -7,7 +7,6 @@ import com.google.common.base.Preconditions;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -86,7 +85,7 @@ public abstract class DatabaseManager {
         if (driver.getQueries() != null) {
             try {
                 this.queries = QueryLoader.loadFile(driver.getQueries());
-            } catch (IllegalArgumentException ex) {
+            } catch (IllegalArgumentException | IOException ex) {
                 getLogger().log(Level.WARNING, "Failed to load queries file: " + driver.getQueries(), ex);
             }
         }
@@ -107,12 +106,18 @@ public abstract class DatabaseManager {
      */
     public final void load(@NotNull final String path, @NotNull final String type) throws DatabaseException {
         Preconditions.checkState(this.source == null, "connected to database already established");
-        final DriverLoader loader = DriverLoader.loadFile(path);
+        DriverLoader loader;
+
+        try {
+            loader = DriverLoader.loadFile(path);
+            loader.load(path);
+        } catch (IOException ex) {
+            throw new DatabaseException("could not load any driver", ex);
+        }
 
         for (final Driver driver : loader.loadDrivers(type)) {
             try {
                 load(driver);
-                return;
             } catch (IllegalArgumentException ignored) {
 
             }
@@ -132,6 +137,7 @@ public abstract class DatabaseManager {
     public final void connect() throws DatabaseException {
         Preconditions.checkState(this.source == null, "connected to database already established");
         Preconditions.checkState(this.config != null, "no driver have been loaded yet");
+        getLogger().info("Trying to establish connection to database...");
 
         try (final HikariDataSource source = new HikariDataSource(this.config)) {
             getLogger().info("Successfully established connection to database.");
@@ -142,6 +148,7 @@ public abstract class DatabaseManager {
             this.source = source;
         } catch (DatabaseException ex) {
             getLogger().warning("Failed to initialize database: " + ex.getMessage());
+            disconnect();
             throw ex;
         } catch (RuntimeException ex) {
             getLogger().warning("Failed to establish connection to database: " + ex.getMessage());
@@ -233,6 +240,8 @@ public abstract class DatabaseManager {
         if (this.source != null && !this.source.isClosed()) {
             this.source.close();
             this.source = null;
+
+            getLogger().info("Closed connection to database.");
         }
 
         this.source = null;
@@ -244,39 +253,19 @@ public abstract class DatabaseManager {
 
     /**
      * Fetches or opens a connection to the database by calling the appropriate method on connected data source.<br>
-     * The result of this method may be null if a database error occurred during the connection opening.
      *
      * @return a valid connection session to the database, or null.
      * @throws IllegalStateException if no connection to a database is established.
+     * @throws SQLException if it fails to fetch a connection.
      */
-    public final @Nullable Connection open() {
+    public final @NotNull Connection fetch() throws SQLException {
         Preconditions.checkState(this.source != null, "no established database connection");
 
         try {
             return this.source.getConnection();
         } catch (SQLException ex) {
             getLogger().log(Level.WARNING, "Failed to fetch connection to database", ex);
-            return null;
-        }
-    }
-
-    /**
-     * Closes the given {@code connection} session to the database if it is not already closed.<br>
-     * Note that the given {@code connection} session will also be closed if it does not belong to the connected data
-     * source.
-     *
-     * @param connection the connection session to be closed.
-     * @throws IllegalStateException if no connection to a database is established.
-     */
-    public final void close(@NotNull final Connection connection) {
-        Preconditions.checkState(this.source != null, "no established database connection");
-
-        try {
-            if (!connection.isClosed()) {
-                connection.close();
-            }
-        } catch (SQLException ex) {
-            getLogger().log(Level.WARNING, "Failed to close fetched connection to database", ex);
+            throw ex;
         }
     }
 
@@ -292,9 +281,9 @@ public abstract class DatabaseManager {
      * @param connection the connection to prepare the statement on.
      * @param identifier the string that uniquely identifies a query.
      * @return the prepared statement for the query that has the given {@code identifier}.
-     * @throws SQLException if it fails to prepare the statement.
      * @throws IllegalArgumentException if no query with the given {@code identifier} exists.
      * @throws IllegalStateException if no queries file is currently loaded.
+     * @throws SQLException if it fails to prepare the statement.
      */
     public final @NotNull PreparedStatement prepare(@NotNull final Connection connection,
                                                     @NotNull final String identifier) throws SQLException {
@@ -315,9 +304,9 @@ public abstract class DatabaseManager {
      * @param connection the connection to prepare the batch statements on.
      * @param identifier the string that uniquely identifies a batch file.
      * @return the statement of the batch that has the given {@code identifier}.
-     * @throws SQLException if it fails to prepare the batch statements.
      * @throws IllegalArgumentException if no batch with the given {@code identifier} exists.
      * @throws IllegalStateException if no queries file is currently loaded.
+     * @throws SQLException if it fails to prepare the batch statements.
      */
     public final @NotNull Statement batch(@NotNull final Connection connection,
                                           @NotNull final String identifier) throws SQLException {

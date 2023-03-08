@@ -2,47 +2,37 @@ package com.github.g4memas0n.cores.database.query;
 
 import org.junit.Assert;
 import org.junit.Test;
-import java.util.MissingResourceException;
+import java.io.IOException;
 import java.util.Random;
 
 public class QueryLoaderTest {
 
-    private final Random random = new Random();
-
     @Test(expected = IllegalArgumentException.class)
-    public void missingExtensionLoadTest() {
-        QueryLoader.loadFile("database/queries");
+    public void loadMissingExtensionTest() {
+        try {
+            QueryLoader.loadFile("database/query/queries");
+        } catch (IOException ex) {
+            Assert.fail("Unexpected exception: " + ex.getMessage());
+        }
     }
 
-    @Test(expected = MissingResourceException.class)
-    public void missingQueryGetTest() {
-        QueryLoader loader;
-
-        if (this.random.nextBoolean()) {
-            loader = QueryLoader.loadFile("database/queries/queries.json");
-        } else {
-            loader = QueryLoader.loadFile("database/queries/queries.xml");
+    @Test(expected = IllegalArgumentException.class)
+    public void loadUnknownExtensionTest() {
+        try {
+            QueryLoader.loadFile("database/query/queries.txt");
+        } catch (IOException ex) {
+            Assert.fail("Unexpected exception: " + ex.getMessage());
         }
-
-        loader.getQuery("query.2");
     }
 
     @Test
-    public void successfulQueryGetTest() {
-        QueryLoader loader;
+    public void loadSuccessfulTest() {
+        final Random random = new Random();
 
-        if (this.random.nextBoolean()) {
-            loader = QueryLoader.loadFile("database/queries/queries.json");
-        } else {
-            loader = QueryLoader.loadFile("database/queries/queries.xml");
+        try {
+            QueryLoader.loadFile(random.nextBoolean() ? "database/query/queries.json" : "database/query/queries.xml");
+        } catch (IOException ex) {
+            Assert.fail("Unexpected exception: " + ex.getMessage());
         }
-
-        Assert.assertEquals("FIRST SQL QUERY", loader.getQuery("id.0"));
-        Assert.assertEquals("SECOND SQL QUERY", loader.getQuery("id.1"));
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void unsupportedExtensionLoadTest() {
-        QueryLoader.loadFile("database/queries/queries.txt");
     }
 }

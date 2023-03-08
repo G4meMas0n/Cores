@@ -58,25 +58,20 @@ public abstract class DriverLoader {
      *
      * @param path the path of a file containing the driver information.
      * @return the newly created driver loader that has already loaded the file.
-     * @throws IllegalArgumentException if the file located at the given {@code path} could not be found or could not
-     * be loaded.
+     * @throws IllegalArgumentException if the file could not be found.
+     * @throws IOException if the file could not be read or parsed.
      */
-    public static @NotNull DriverLoader loadFile(@NotNull final String path) {
+    public static @NotNull DriverLoader loadFile(@NotNull final String path) throws IOException {
         Preconditions.checkArgument(path.contains("."), "file path is missing file extension");
-        final String extension = path.substring(path.lastIndexOf("."));
+        DriverLoader loader;
 
-        if (extension.equalsIgnoreCase(".json")) {
-            final DriverLoader loader = new JsonDriverLoader();
+        if (path.substring(path.lastIndexOf(".")).equalsIgnoreCase(".json")) {
+            loader = new JsonDriverLoader();
+            loader.load(path);
 
-            try {
-                loader.load(path);
-
-                return loader;
-            } catch (IOException ex) {
-                throw new IllegalArgumentException("driver file at given path cannot be parsed", ex);
-            }
+            return loader;
         }
 
-        throw new IllegalArgumentException("missing or unsupported driver file extension");
+        throw new IllegalArgumentException("unsupported driver file extension");
     }
 }

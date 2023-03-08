@@ -24,7 +24,13 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class QueryLoader {
 
-    private final Map<String, String> cache;
+    private Map<String, String> cache;
+
+    /**
+     * The reference to a parent query loader for this query file.<br>
+     * Must be set by the implementing class if a parent file is specified.
+     */
+    protected QueryLoader parent;
 
     /**
      * The reference to the location of the file that is currently loaded.<br>
@@ -35,9 +41,7 @@ public abstract class QueryLoader {
     /**
      * Protected default constructor for the implementing query loader classes.
      */
-    protected QueryLoader() {
-        this.cache = new ConcurrentHashMap<>();
-    }
+    protected QueryLoader() { }
 
     /**
      * Loads the file located at the given {@code path} from the {@link ClassLoader} and parses it as queries file
@@ -93,19 +97,30 @@ public abstract class QueryLoader {
      * @throws MissingResourceException if no query entry with the given {@code identifier} exists.
      */
     public final @NotNull String getQuery(@NotNull final String identifier) throws MissingResourceException {
-        String query = this.cache.get(identifier);
+        String query;
+
+        if (this.cache != null) {
+            query = this.cache.get(identifier);
+
+            if (query != null) {
+                return query;
+            }
+        } else {
+            this.cache = new ConcurrentHashMap<>();
+        }
+
+        query = loadQuery(identifier);
 
         if (query == null) {
-            query = this.loadQuery(identifier);
+            query = this.parent != null ? this.parent.loadQuery(identifier) : null;
 
             if (query == null) {
                 throw new MissingResourceException("missing key in queries file located at " + this.path,
-                        this.getClass().getSimpleName(), identifier);
+                        getClass().getSimpleName(), identifier);
             }
-
-            this.cache.put(identifier, query);
         }
 
+        this.cache.put(identifier, query);
         return query;
     }
 
@@ -115,29 +130,29 @@ public abstract class QueryLoader {
      *
      * @param path the path of the file containing the queries.
      * @return the newly created query loader that has already loaded the file.
-     * @throws IllegalArgumentException if the file could not be found or could not be loaded.
+     * @throws IllegalArgumentException if the file could not be found.
+     * @throws IOException if the file could not be read or parsed.
      */
-    public static @NotNull QueryLoader loadFile(@NotNull final String path) {
-        final String lowered = path.toLowerCase(Locale.ROOT);
-        QueryLoader loader = null;
+    public static @NotNull QueryLoader loadFile(@NotNull final String path) throws IOException {
+        Preconditions.checkArgument(path.contains("."), "file path is missing file extension");
+        QueryLoader loader;
 
-        if (lowered.endsWith(".json")) {
-            loader = new JsonQueryLoader();
-        } else if (lowered.endsWith(".xml")) {
-            loader = new XmlQueryLoader();
+        switch (path.substring(path.lastIndexOf(".")).toLowerCase(Locale.ROOT)) {
+            case ".json":
+                loader = new JsonQueryLoader();
+                break;
+
+            case ".xml":
+                loader = new XmlQueryLoader();
+                break;
+
+            default:
+                throw new IllegalArgumentException("unsupported queries file extension");
         }
 
-        if (loader != null) {
-            try {
-                loader.load(path);
+        loader.load(path);
 
-                return loader;
-            } catch (IOException ex) {
-                throw new IllegalArgumentException("queries file at given path cannot be parsed", ex);
-            }
-        } else {
-            throw new IllegalArgumentException("missing or unsupported queries file extension");
-        }
+        return loader;
     }
 
     /**
@@ -146,9 +161,9 @@ public abstract class QueryLoader {
      *
      * @param path the path of the sql batch file.
      * @param statement the statement to add the loaded batch statements to.
+     * @throws IllegalArgumentException if the batch file could not be found.
      * @throws IOException if the file could not be read or parsed.
      * @throws SQLException if a sql exception occurs while adding batches to the statement.
-     * @throws IllegalArgumentException if the batch file could not be found.
      */
     public static void loadBatch(@NotNull final String path, @NotNull final Statement statement) throws IOException, SQLException {
         final InputStream stream = QueryLoader.class.getClassLoader().getResourceAsStream(path);
