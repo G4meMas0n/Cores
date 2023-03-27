@@ -3,7 +3,7 @@ package com.github.g4memas0n.cores.database;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * An exception that provides information on any database error that occurs.<br>
+ * An exception that provides information on any database error that occurs.
  *
  * @since 1.0.0
  */

@@ -1,6 +1,6 @@
 /**
  * Provides classes for loading sql queries from files.<br>
- * These classes are currently only capable of loading sql queries from json and xml files.
+ * These classes are currently only capable of loading sql queries from json and property files.
  *
  * @since 1.0.0
  */

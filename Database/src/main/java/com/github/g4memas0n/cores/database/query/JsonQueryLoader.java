@@ -4,8 +4,9 @@ import com.google.common.base.Preconditions;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonIOException;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
+import com.google.gson.JsonSyntaxException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import java.io.BufferedReader;
@@ -14,24 +15,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
-import static com.github.g4memas0n.cores.database.DatabaseManager.getLogger;
-
 /**
  * An implementing query loader that loads the mapping from a json file.<br>
- * This loader will only accept json files that are formed like this:
+ * This loader will only accept json files that are formed properly, like this example:
  * <pre><code>
  * {
- *     "options": {
- *         "parent": "path/to/parent/file"
- *     }
- *     "batches": {
- *         "identifier.one": "path/to/batch/file",
- *         "identifier.two": "path/to/another/batch/file"
- *     },
- *     "queries": {
- *         "identifier.one": "SQL Query",
- *         "identifier.two": "Another SQL Query"
- *     }
+ *     "identifier.one": "SQL Query",
+ *     "identifier.two": "Another SQL Query"
  * }
  * </code></pre>
  *
@@ -51,82 +41,53 @@ public class JsonQueryLoader extends QueryLoader {
 
     @Override
     public void load(@NotNull final String path) throws IOException {
-        final InputStream stream = getClass().getClassLoader().getResourceAsStream(path);
-        Preconditions.checkArgument(stream != null, "missing file at " + path);
+        try (InputStream stream = getClass().getClassLoader().getResourceAsStream(path)) {
+            Preconditions.checkArgument(stream != null, "missing file at " + path);
+            load(stream);
+        }
+    }
 
+    @Override
+    public void load(@NotNull final InputStream stream) throws IOException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
-            JsonObject root = this.gson.fromJson(reader, JsonObject.class);
-
-            if (root.has("batches")) {
-                if (!root.get("batches").isJsonObject()) {
-                    throw new JsonParseException("expected element of batches to be a json object");
-                }
-            }
-
-            if (root.has("queries")) {
-                if (!root.get("queries").isJsonObject()) {
-                    throw new JsonParseException("expected element of queries to be a json object");
-                }
-            }
-
-            if (root.has("options")) {
-                if (!root.get("options").isJsonObject()) {
-                    throw new JsonParseException("expected element of options to be a json object");
-                }
-
-                JsonElement parent = root.getAsJsonObject("options").get("parent");
-
-                if (parent != null && parent.isJsonPrimitive()) {
-                    this.parent = QueryLoader.loadFile(parent.getAsString());
-                }
-            }
-
-            this.path = path;
-            this.root = root;
-        } catch (JsonParseException ex) {
-            throw new IOException("queries file " + path + " could not be parsed", ex);
+            this.root = this.gson.fromJson(reader, JsonObject.class);
+        } catch (JsonSyntaxException ex) {
+            throw new IllegalArgumentException("file must begin with an object");
+        } catch (JsonIOException ex) {
+            throw new IOException("file could not be parsed", ex);
         }
     }
 
     @Override
-    protected @Nullable String loadBatch(@NotNull final String identifier) {
-        Preconditions.checkState(this.root != null, "no queries file has been loaded yet");
-        final JsonObject batches = this.root.getAsJsonObject("batches");
+    protected @Nullable String loadQuery(@NotNull String identifier) {
+        Preconditions.checkState(this.root != null, "no file have been loaded yet");
+        JsonElement element = this.root.get(identifier);
 
-        if (batches != null) {
-            final JsonElement element = batches.get(identifier);
+        if (element == null) {
+            JsonElement entry;
+            JsonObject section = this.root;
+            int index, prev = 0;
 
-            if (element != null) {
-                if (element.isJsonPrimitive()) {
-                    return element.getAsString();
+            while ((index = identifier.indexOf(".", prev)) >= 0) {
+                entry = section.get(identifier.substring(0, index));
+
+                if (entry != null && entry.isJsonObject()) {
+                    section = entry.getAsJsonObject();
+                    element = section.get(identifier = identifier.substring(index + 1));
+
+                    if (element != null) {
+                        break;
+                    }
+
+                    prev = 0;
+                } else  {
+                    prev = index + 1;
                 }
-
-                getLogger().severe("Skipping illegal batch element " + identifier + " in queries file: " + this.path);
             }
-        } else {
-            throw new IllegalStateException("no batches have been loaded yet");
         }
 
-        return null;
-    }
-
-    @Override
-    protected @Nullable String loadQuery(@NotNull final String identifier) {
-        Preconditions.checkState(this.root != null, "no queries file have been loaded yet");
-        final JsonObject queries = this.root.getAsJsonObject("queries");
-
-        if (queries != null) {
-            final JsonElement element = queries.get(identifier);
-
-            if (element != null) {
-                if (element.isJsonPrimitive()) {
-                    return element.getAsString();
-                }
-
-                getLogger().severe("Skipping illegal query element " + identifier + " in queries file: " + this.path);
-            }
-        } else {
-            throw new IllegalStateException("no queries have been loaded yet");
+        if (element != null && element.isJsonPrimitive()) {
+            return element.getAsJsonPrimitive().getAsString();
         }
 
         return null;

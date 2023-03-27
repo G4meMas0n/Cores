@@ -1,18 +1,16 @@
-{
-    "drivers": [
-        {
-            "class": "com.mysql.cj.jdbc.Driver",
-            "url": "jdbc:mysql://{Host}:{Port}/{Database}",
-            "queries": "database/queries.json",
-            "type": "MySQL"
-        },
-        {
-            "class": "org.sqlite.SQLiteDataSource",
-            "type": "SQLite",
-            "properties": {
-                "dataSource.encoding": "UTF-8",
-                "dataSource.url": "Data Source={Path}/storage/database.db"
-            }
+[
+    {
+        "class": "com.mysql.cj.jdbc.Driver",
+        "url": "jdbc:mysql://{Host}:{Port}/{Database}",
+        "type": "MySQL",
+        "version": "8"
+    },
+    {
+        "class": "org.sqlite.SQLiteDataSource",
+        "type": "SQLite",
+        "properties": {
+            "dataSource.encoding": "UTF-8",
+            "dataSource.url": "Data Source={Path}/storage/database.db"
         }
-    ]
-}
+    }
+]

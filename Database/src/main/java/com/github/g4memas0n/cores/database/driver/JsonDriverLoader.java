@@ -1,12 +1,14 @@
 package com.github.g4memas0n.cores.database.driver;
 
+import com.github.g4memas0n.cores.database.DatabaseManager;
 import com.google.common.base.Preconditions;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonIOException;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
+import com.google.gson.JsonSyntaxException;
 import org.jetbrains.annotations.NotNull;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -20,25 +22,21 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.logging.Level;
 
-import static com.github.g4memas0n.cores.database.DatabaseManager.getLogger;
-
 /**
  * An implementing driver loader that loads the driver information from a json file.<br>
- * This loader will only accept json files that are formed like this:
+ * This loader will only accept json files that are formed properly, like this example:
  * <pre><code>
- * {
- *     "drivers": [
- *         {
- *             "class": "path.to.driver.or.datasource.Class",
- *             "url": "jdbc://url:for/driver-class",        # Only required if the class specified by 'class' implements the Driver interface.
- *             "type": "SQLType",                           # Database type like 'MySQL' and/or 'SQLite', etc...
- *             "queries": "path/to/queries/file.extension", # Optional entry for specifying a queries file.
- *             "properties": {                              # Optional entry for specifying data source properties.
- *                 "key": "value"
- *             }
+ * [
+ *     {
+ *         "class": "path.to.driver.or.datasource.Class",
+ *         "url": "jdbc://url:for/driver-class",    # Only required if the class specified by 'class' implements the Driver interface.
+ *         "type": "SQLType",                       # Database type like 'MySQL' and/or 'SQLite', etc...
+ *         "version": "1",                          # Optional entry for specifying the type version.
+ *         "properties": {                          # Optional entry for specifying data source properties.
+ *             "key": "value"
  *         }
- *     ]
- * }
+ *     }
+ * ]
  * </code></pre>
  *
  * @since 1.0.0
@@ -57,25 +55,28 @@ public class JsonDriverLoader extends DriverLoader {
 
     @Override
     public void load(@NotNull final String path) throws IOException {
-        final InputStream stream = getClass().getClassLoader().getResourceAsStream(path);
-        Preconditions.checkArgument(stream != null, "missing file at " + path);
+        try (InputStream stream = getClass().getClassLoader().getResourceAsStream(path)) {
+            Preconditions.checkArgument(stream != null, "missing file at " + path);
+            load(stream);
+        }
+    }
 
+    @Override
+    public void load(@NotNull final InputStream stream) throws IOException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
-            JsonObject root = this.gson.fromJson(reader, JsonObject.class);
-            JsonElement element = root.get("drivers");
+            JsonArray root = this.gson.fromJson(reader, JsonArray.class);
 
-            if (element != null) {
-                if (!element.isJsonArray()) {
-                    throw new JsonParseException("expected element of drivers to be a json array");
+            for (JsonElement element : root) {
+                if (!element.isJsonObject()) {
+                    throw new IllegalArgumentException("file contains illegal elements");
                 }
-
-                this.root = element.getAsJsonArray();
-                this.path = path;
-            } else {
-                throw new JsonParseException("expected drivers object key, but was missing");
             }
-        } catch (JsonParseException ex) {
-            throw new IOException("driver file " + path + " could not be parsed", ex);
+
+            this.root = root;
+        } catch (JsonSyntaxException ex) {
+            throw new IllegalArgumentException("file must begin with an array");
+        } catch (JsonIOException ex) {
+            throw new IOException("file could not be parsed", ex);
         }
     }
 
@@ -86,40 +87,31 @@ public class JsonDriverLoader extends DriverLoader {
 
     @Override
     public @NotNull List<Driver> loadDrivers(@NotNull final String type) {
-        Preconditions.checkState(this.root != null, "no driver file have been loaded yet");
+        Preconditions.checkState(this.root != null, "no file have been loaded yet");
         final Iterator<JsonElement> iterator = this.root.iterator();
         final List<Driver> drivers = new LinkedList<>(); // Using linked list because it will most likely be iterated
-        Properties properties;
-        JsonElement element;
         JsonObject entry;
+        String url, version;
         Driver driver;
 
         while (iterator.hasNext()) {
-            if (!(element = iterator.next()).isJsonObject()) {
-                getLogger().severe("Skipping illegal element in driver file: " + this.path);
-                continue;
-            }
+            entry = iterator.next().getAsJsonObject();
 
-            entry = element.getAsJsonObject();
             if (!entry.has("class") || !entry.has("type")) {
-                getLogger().severe("Skipping invalid element with missing class/type in driver file: " + this.path);
+                DatabaseManager.getLogger().severe("Skipping invalid driver entry with missing class/type");
                 continue;
             }
 
             try {
                 if (type.equals("*") || entry.get("type").getAsString().equalsIgnoreCase(type)) {
-                    driver = new Driver(Class.forName(entry.get("class").getAsString()), entry.get("type").getAsString(),
-                            entry.has("url") ? entry.get("url").getAsString() : null);
-
-                    if (entry.has("queries")) {
-                        driver.setQueries(entry.get("queries").getAsString());
-                    }
+                    url = entry.has("url") ? entry.get("url").getAsString() : null;
+                    version = entry.has("version") ? entry.get("version").getAsString() : null;
+                    driver = new Driver(entry.get("class").getAsString(), entry.get("type").getAsString(), version, url);
 
                     if (entry.has("properties")) {
-                        entry = entry.get("properties").getAsJsonObject();
-                        properties = new Properties();
+                        Properties properties = new Properties();
 
-                        for (Entry<String, JsonElement> property : entry.entrySet()) {
+                        for (Entry<String, JsonElement> property : entry.getAsJsonObject("properties").entrySet()) {
                             if (property.getValue().isJsonPrimitive()) {
                                 properties.setProperty(property.getKey(), property.getValue().getAsString());
                             }
@@ -131,8 +123,8 @@ public class JsonDriverLoader extends DriverLoader {
                     drivers.add(driver);
                 }
             } catch (UnsupportedOperationException ex) {
-                getLogger().log(Level.SEVERE, "Skipping malformed element in driver file: " + this.path, ex);
-            } catch (ClassNotFoundException ignored) {
+                DatabaseManager.getLogger().log(Level.SEVERE, "Skipping malformed driver entry for type " + type, ex);
+            } catch (IllegalArgumentException ignored) {
 
             }
         }

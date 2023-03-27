@@ -14,21 +14,24 @@ public class Driver {
 
     private final Class<?> source;
     private final String type;
+    private final String version;
     private final String url;
 
     private Properties properties;
-    private String queries;
 
     /**
      * Public constructor for creating a driver representation.
      *
      * @param source the driver class implementing {@link java.sql.Driver} or {@link javax.sql.DataSource}.
      * @param type the type of the database driver like 'MySQL' and/or 'SQLite', etc...
+     * @param version the version of the database type or null if not specified.
      * @param url the jdbc url for the driver class or null if not required.
      */
-    public Driver(@NotNull final Class<?> source, @NotNull final String type, @Nullable final String url) {
+    public Driver(@NotNull final Class<?> source, @NotNull final String type,
+                  @Nullable final String version, @Nullable final String url) {
         this.source = source;
         this.type = type;
+        this.version = version;
         this.url = url;
     }
 
@@ -37,9 +40,11 @@ public class Driver {
      *
      * @param clazz the name of a driver class implementing {@link java.sql.Driver} or {@link javax.sql.DataSource}.
      * @param type the type of the database driver like 'MySQL' and/or 'SQLite', etc...
+     * @param version the version of the database type or null if not specified.
      * @param url the jdbc url for the driver class or null if not required.
      */
-    public Driver(@NotNull final String clazz, @NotNull final String type, @Nullable final String url) {
+    public Driver(@NotNull final String clazz, @NotNull final String type,
+                  @Nullable final String version, @Nullable final String url) {
         try {
             this.source = Class.forName(clazz);
         } catch (ClassNotFoundException ex) {
@@ -47,6 +52,7 @@ public class Driver {
         }
 
         this.type = type;
+        this.version = version;
         this.url = url;
     }
 
@@ -67,6 +73,15 @@ public class Driver {
      */
     public @NotNull String getType() {
         return this.type;
+    }
+
+    /**
+     * Returns the database type version that this driver representation is for
+     *
+     * @return the database type version of the driver.
+     */
+    public @Nullable String getVersion() {
+        return this.version;
     }
 
     /**
@@ -100,27 +115,10 @@ public class Driver {
         this.properties = properties;
     }
 
-    /**
-     * Returns the path to a file containing sql queries or null if it is not specified.
-     *
-     * @return the path to a queries file.
-     */
-    public @Nullable String getQueries() {
-        return this.queries;
-    }
-
-    /**
-     * Sets or removes the path to a file containing sql queries.
-     *
-     * @param queries the new path to a queries file or null.
-     */
-    public void setQueries(@Nullable final String queries) {
-        this.queries = queries;
-    }
-
     @Override
     public @NotNull String toString() {
-        return "Driver{source='" + this.source + "', type='" + this.type + "', url='" + this.url + "'}";
+        return "Driver{source='" + this.source + "', type='" + this.type
+                + "',version='" + this.version + "', url='" + this.url + "'}";
     }
 
     @Override

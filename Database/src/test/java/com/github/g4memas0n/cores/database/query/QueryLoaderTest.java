@@ -1,38 +1,52 @@
 package com.github.g4memas0n.cores.database.query;
 
+import com.github.g4memas0n.cores.database.driver.Driver;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.Mockito;
 import java.io.IOException;
-import java.util.Random;
 
 public class QueryLoaderTest {
 
     @Test(expected = IllegalArgumentException.class)
-    public void loadMissingExtensionTest() {
+    public void loadMissingOrUnsupportedTest() {
         try {
-            QueryLoader.loadFile("database/query/queries");
+            QueryLoader.getLoader("missing");
         } catch (IOException ex) {
-            Assert.fail("Unexpected exception: " + ex.getMessage());
-        }
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void loadUnknownExtensionTest() {
-        try {
-            QueryLoader.loadFile("database/query/queries.txt");
-        } catch (IOException ex) {
-            Assert.fail("Unexpected exception: " + ex.getMessage());
+            Assert.fail(ex.toString());
         }
     }
 
     @Test
-    public void loadSuccessfulTest() {
-        final Random random = new Random();
+    public void loadForDriverTest() {
+        QueryLoader loader = null;
+
+        // Mock driver
+        Driver driver = Mockito.mock(Driver.class);
+        Mockito.when(driver.getType()).thenReturn("Driver");
+        Mockito.when(driver.getVersion()).thenReturn("1");
 
         try {
-            QueryLoader.loadFile(random.nextBoolean() ? "database/query/queries.json" : "database/query/queries.xml");
+            loader = QueryLoader.getLoader("database/queries", driver);
         } catch (IOException ex) {
-            Assert.fail("Unexpected exception: " + ex.getMessage());
+            Assert.fail(ex.toString());
         }
+
+        Assert.assertNotNull("missing loader", loader);
+        Assert.assertNotNull("missing path", loader.path);
+        Assert.assertEquals("non-matching path", "database/queries_driver-1.properties", loader.path);
+        Assert.assertEquals("non-matching query", "Query (driver-version)", loader.loadQuery("identifier"));
+
+        loader = loader.parent;
+        Assert.assertNotNull("missing parent loader", loader);
+        Assert.assertNotNull("missing parent path", loader.path);
+        Assert.assertEquals("non-matching parent path", "database/queries_driver.properties", loader.path);
+        Assert.assertEquals("non-matching parent query", "Query (driver)", loader.loadQuery("identifier"));
+
+        loader = loader.parent;
+        Assert.assertNotNull("missing base loader", loader);
+        Assert.assertNotNull("missing base path", loader.path);
+        Assert.assertEquals("non-matching base path", "database/queries.properties", loader.path);
+        Assert.assertEquals("non-matching base query", "Query", loader.loadQuery("identifier"));
     }
 }

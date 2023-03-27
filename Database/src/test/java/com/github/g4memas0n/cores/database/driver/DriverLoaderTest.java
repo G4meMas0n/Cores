@@ -6,30 +6,21 @@ import java.io.IOException;
 
 public class DriverLoaderTest {
 
-    @Test(expected = IllegalArgumentException.class)
-    public void loadMissingExtensionTest() {
+    @Test
+    public void loadWithExtension() {
         try {
-            DriverLoader.loadFile("database/drivers");
+            DriverLoader.getLoader("database/drivers.json");
         } catch (IOException ex) {
-            Assert.fail("Unexpected exception: " + ex.getMessage());
-        }
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void loadUnknownExtensionTest() {
-        try {
-            DriverLoader.loadFile("database/drivers.txt");
-        } catch (IOException ex) {
-            Assert.fail("Unexpected exception: " + ex.getMessage());
+            Assert.fail(ex.toString());
         }
     }
 
     @Test
-    public void loadSuccessfulTest() {
+    public void loadWithoutExtension() {
         try {
-            DriverLoader.loadFile("database/drivers.json");
+            DriverLoader.getLoader("database/drivers");
         } catch (IOException ex) {
-            Assert.fail("Unexpected exception: " + ex.getMessage());
+            Assert.fail(ex.toString());
         }
     }
 }

@@ -1,9 +1,13 @@
 package com.github.g4memas0n.cores.database.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 public class JsonQueryLoaderTest {
 
@@ -14,105 +18,88 @@ public class JsonQueryLoaderTest {
         this.loader = new JsonQueryLoader();
     }
 
-    public void setupFile() {
-        try {
-            this.loader.load("database/query/queries.json");
+    @Test(expected = IllegalArgumentException.class)
+    public void loadIllegalFileTest() {
+        final String illegal = "[ ]";
+
+        try (InputStream stream = new ByteArrayInputStream(illegal.getBytes(StandardCharsets.UTF_8))) {
+            this.loader.load(stream);
         } catch (IOException ex) {
-            Assert.fail("Unexpected exception " + ex);
+            Assert.fail(ex.toString());
         }
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void loadMissingFileTest() {
         try {
-            this.loader.load("database/query/missing-file.json");
+            this.loader.load("database/missing.json");
         } catch (IOException ex) {
-            Assert.fail("Unexpected exception: " + ex.getMessage());
-        }
-    }
-
-    @Test
-    public void loadIllegalFileTest() {
-        try {
-            this.loader.load("database/query/illegal-batches.json");
-        } catch (IOException ex) {
-            Assert.assertNotNull(ex.getMessage());
-            Assert.assertTrue(ex.getMessage().endsWith("could not be parsed"));
-        }
-
-        try {
-            this.loader.load("database/query/illegal-queries.json");
-        } catch (IOException ex) {
-            Assert.assertNotNull(ex.getMessage());
-            Assert.assertTrue(ex.getMessage().endsWith("could not be parsed"));
-        }
-
-        try {
-            this.loader.load("database/query/illegal-options.json");
-        } catch (IOException ex) {
-            Assert.assertNotNull(ex.getMessage());
-            Assert.assertTrue(ex.getMessage().endsWith("could not be parsed"));
-        }
-    }
-
-    @Test
-    public void loadCorrectFileTest() {
-        try {
-            this.loader.load("database/query/queries.json");
-        } catch (IOException ex) {
-            Assert.fail("Unexpected exception: " + ex.getMessage());
+            Assert.fail(ex.getMessage());
         }
     }
 
     @Test(expected = IllegalStateException.class)
-    public void loadBatchAtIllegalTimeTest() {
-        this.loader.loadBatch("identifier.one");
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void loadQueryAtIllegalTimeTest() {
-        this.loader.loadQuery("identifier.one");
+    public void loadDriverOnNotLoadedFileTest() {
+        this.loader.loadQuery("identifier");
     }
 
     @Test
-    public void loadMissingBatchTest() {
-        setupFile();
-
-        Assert.assertNull("unknown batch", this.loader.loadBatch("missing"));
+    public void loadQueryNoSectionTest() {
+        final String file = "{\"first.second.third.fourth\": \"Query\"}";
+        loadAndTest(file, "first.second.third.fourth", "Query");
     }
 
     @Test
-    public void loadMissingQueryTest() {
-        setupFile();
-
-        Assert.assertNull("unknown query", this.loader.loadQuery("missing"));
+    public void loadQueryFirstSectionTest() {
+        final String file = "{\"first\": {\"second.third.fourth\": \"Query\"}}";
+        loadAndTest(file, "first.second.third.fourth", "Query");
     }
 
     @Test
-    public void loadSpecificBatchTest() {
-        String batch;
-        setupFile();
-
-        batch = this.loader.loadBatch("identifier.one");
-        Assert.assertNotNull("missing batch", batch);
-        Assert.assertEquals("non-matching batch", "path/to/batch/file", batch);
-
-        batch = this.loader.loadBatch("identifier.two");
-        Assert.assertNotNull("missing batch", batch);
-        Assert.assertEquals("non-matching batch", "path/to/another/batch/file", batch);
+    public void loadQueryMiddleSectionTest() {
+        final String file = "{\"first.second\": {\"third.fourth\": \"Query\"}}";
+        loadAndTest(file, "first.second.third.fourth", "Query");
     }
 
     @Test
-    public void loadSpecificQueryTest() {
-        String query;
-        setupFile();
+    public void loadQueryLastSectionTest() {
+        final String file = "{\"first.second.third\": {\"fourth\": \"Query\"}}";
+        loadAndTest(file, "first.second.third.fourth", "Query");
+    }
 
-        query = this.loader.loadQuery("identifier.one");
+    @Test
+    public void loadQueryFirstMultipleSectionTest() {
+        final String file = "{\"first\": {\"second\": {\"third.fourth\": \"Query\"}}}";
+        loadAndTest(file, "first.second.third.fourth", "Query");
+    }
+
+    @Test
+    public void loadQueryOuterMultipleSectionTest() {
+        final String file = "{\"first\": {\"second.third\": {\"fourth\": \"Query\"}}}";
+        loadAndTest(file, "first.second.third.fourth", "Query");
+    }
+
+    @Test
+    public void loadQueryLastMultipleSectionTest() {
+        final String file = "{\"first.second\": {\"third\": {\"fourth\": \"Query\"}}}";
+        loadAndTest(file, "first.second.third.fourth", "Query");
+    }
+
+    @Test
+    public void loadQueryAllSectionTest() {
+        final String file = "{\"first\": {\"second\": {\"third\": {\"fourth\": \"Query\"}}}}";
+        loadAndTest(file, "first.second.third.fourth", "Query");
+    }
+
+    public void loadAndTest(@NotNull final String file, @NotNull final String key, @NotNull final String value) {
+        try (InputStream stream = new ByteArrayInputStream(file.getBytes(StandardCharsets.UTF_8))) {
+            this.loader.load(stream);
+        } catch (IOException ex) {
+            Assert.fail(ex.toString());
+        }
+
+        String query = this.loader.loadQuery(key);
         Assert.assertNotNull("missing query", query);
-        Assert.assertEquals("non-matching query", "FIRST SQL QUERY", query);
-
-        query = this.loader.loadQuery("identifier.two");
-        Assert.assertNotNull("missing query", query);
-        Assert.assertEquals("non-matching query", "SECOND SQL QUERY", query);
+        Assert.assertEquals("non-matching query", value, query);
     }
 }

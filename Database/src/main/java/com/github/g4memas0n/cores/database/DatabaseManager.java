@@ -12,8 +12,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Locale;
 import java.util.Map;
 import java.util.MissingResourceException;
+import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -31,14 +33,26 @@ public abstract class DatabaseManager {
      */
     protected static Logger logger = Logger.getLogger(DatabaseManager.class.getName());
 
+    private final String basename;
+
     private volatile HikariDataSource source;
     private volatile HikariConfig config;
     private volatile QueryLoader queries;
 
     /**
-     * Public default constructor for extending this class.
+     * Public constructor for extending this class.
      */
-    public DatabaseManager() { }
+    public DatabaseManager() {
+        this.basename = null;
+    }
+
+    /**
+     * Public constructor for extending this class with a specified queries file basename.
+     * @param basename the basename for the queries file.
+     */
+    public DatabaseManager(@NotNull final String basename) {
+        this.basename = basename;
+    }
 
     /*
      * Methods for establishing database connections:
@@ -82,11 +96,11 @@ public abstract class DatabaseManager {
             throw new DatabaseException("failed to load driver", ex);
         }
 
-        if (driver.getQueries() != null) {
+        if (this.basename != null) {
             try {
-                this.queries = QueryLoader.loadFile(driver.getQueries());
+                this.queries = QueryLoader.getLoader(this.basename, driver);
             } catch (IllegalArgumentException | IOException ex) {
-                getLogger().log(Level.WARNING, "Failed to load queries file: " + driver.getQueries(), ex);
+                getLogger().log(Level.WARNING, "Failed to load queries file", ex);
             }
         }
     }
@@ -109,13 +123,12 @@ public abstract class DatabaseManager {
         DriverLoader loader;
 
         try {
-            loader = DriverLoader.loadFile(path);
-            loader.load(path);
+            loader = DriverLoader.getLoader(path);
         } catch (IOException ex) {
             throw new DatabaseException("could not load any driver", ex);
         }
 
-        for (final Driver driver : loader.loadDrivers(type)) {
+        for (Driver driver : loader.loadDrivers(type)) {
             try {
                 load(driver);
             } catch (IllegalArgumentException ignored) {
@@ -137,19 +150,22 @@ public abstract class DatabaseManager {
     public final void connect() throws DatabaseException {
         Preconditions.checkState(this.source == null, "connected to database already established");
         Preconditions.checkState(this.config != null, "no driver have been loaded yet");
-        getLogger().info("Trying to establish connection to database...");
+        HikariDataSource source;
 
-        try (final HikariDataSource source = new HikariDataSource(this.config)) {
+        try {
+            getLogger().info("Trying to establish connection to database...");
+            source = new HikariDataSource(this.config);
             getLogger().info("Successfully established connection to database.");
+
             getLogger().info("Initializing database...");
             initialize();
             getLogger().info("Successfully initialized database.");
 
             this.source = source;
-        } catch (DatabaseException ex) {
+        } catch (SQLException ex) {
             getLogger().warning("Failed to initialize database: " + ex.getMessage());
             disconnect();
-            throw ex;
+            throw new DatabaseException("failed to initialize database", ex);
         } catch (RuntimeException ex) {
             getLogger().warning("Failed to establish connection to database: " + ex.getMessage());
             throw new DatabaseException("failed to establish connection", ex);
@@ -226,11 +242,10 @@ public abstract class DatabaseManager {
 
     /**
      * Initializes the database by ensuring that all needed database tables, indices, etc... exists.
-     * If any errors are occurring during the initialization, an exception should be thrown by the implementing class.
      *
-     * @throws DatabaseException if any exception occurs during the initialization.
+     * @throws SQLException if any exception occurs during the initialization.
      */
-    public abstract void initialize() throws DatabaseException;
+    public abstract void initialize() throws SQLException;
 
     /**
      * Disconnects from the connected database and shutdowns the used data source.<br>
@@ -297,31 +312,6 @@ public abstract class DatabaseManager {
     }
 
     /**
-     * Prepares the batch statements on the given {@code connection} that has the given batch {@code identifier}.<br>
-     * Note that this method will only work if the loaded driver had specified a queries file, otherwise it will throw
-     * an exception.
-     *
-     * @param connection the connection to prepare the batch statements on.
-     * @param identifier the string that uniquely identifies a batch file.
-     * @return the statement of the batch that has the given {@code identifier}.
-     * @throws IllegalArgumentException if no batch with the given {@code identifier} exists.
-     * @throws IllegalStateException if no queries file is currently loaded.
-     * @throws SQLException if it fails to prepare the batch statements.
-     */
-    public final @NotNull Statement batch(@NotNull final Connection connection,
-                                          @NotNull final String identifier) throws SQLException {
-        Preconditions.checkState(this.queries != null, "no loaded queries file");
-
-        try (final Statement statement = connection.createStatement()) {
-            QueryLoader.loadBatch(this.queries.getBatch(identifier), statement);
-
-            return statement;
-        } catch (IOException ex) {
-            throw new IllegalArgumentException("batch file with identifier " + identifier + " can not be loaded");
-        }
-    }
-
-    /**
      * Loads the sql query that has the given query {@code identifier} from the currently loaded queries file.<br>
      * Note that this method will only work if the loaded driver had specified a queries file, otherwise it will throw
      * an exception.
@@ -357,5 +347,123 @@ public abstract class DatabaseManager {
         }
 
         return logger;
+    }
+
+    /**
+     * Closes the given {@code statements} silently, hiding any SQLException that occur.
+     * @param statements the statements to close.
+     */
+    public static void close(@NotNull final Statement... statements) {
+        for (Statement statement : statements) {
+            try {
+                statement.close();
+            } catch (SQLException ignored) { }
+        }
+    }
+
+    /**
+     * Closes the given {@code connection} silently, hiding any SQLException that occur.
+     * @param connection the connection to close.
+     */
+    public static void close(@NotNull final Connection connection) {
+        try (Connection closeable = connection) {
+            if (!closeable.getAutoCommit()) {
+                closeable.rollback();
+            }
+        } catch (SQLException ex) {
+            getLogger().log(Level.SEVERE, "Could not close database connection", ex);
+        }
+    }
+
+    /*
+     * Static classes:
+     */
+
+    /**
+     * A placeholder enumeration for all the available placeholders in the database connection settings.
+     *
+     * @since 1.0.0
+     */
+    public enum Placeholder {
+
+        /**
+         * Represents the database name placeholder.
+         */
+        DATABASE("databaseName"),
+
+        /**
+         * Represents the server name/host placeholder.
+         */
+        HOST("serverName"),
+
+        /**
+         * Represents the server port placeholder.
+         */
+        PORT("portNumber"),
+
+        /**
+         * Represents the username placeholder.
+         */
+        USERNAME(),
+
+        /**
+         * Represents the password placeholder.
+         */
+        PASSWORD(),
+
+        /**
+         * Represents the path placeholder.
+         */
+        PATH();
+
+        private final String property;
+
+        Placeholder() {
+            this.property = null;
+        }
+
+        Placeholder(@NotNull final String property) {
+            this.property = property;
+        }
+
+        /**
+         * Returns the property key for this {@code Placeholder}.
+         * @return the property key representation.
+         */
+        public @NotNull String getKey() {
+            return name().toLowerCase(Locale.ROOT);
+        }
+
+        /**
+         * Returns the actual placeholder string for this {@code Placeholder} that will be replaced if found.
+         * @return the placeholder string representation.
+         */
+        public @NotNull String getPlaceholder() {
+            return "{" + getKey() + "}";
+        }
+
+        /**
+         * Returns the property key for the data-source properties, if it has one. Otherwise, an exception will be thrown.<br>
+         * It might be useful to check if this {@code Placeholder} has a data-source property via the {@link #hasProperty()}
+         * method.
+         * @return the property key for data-source properties.
+         * @throws NoSuchElementException if this {@code Placeholder} has no data-source property.
+         * @see #hasProperty()
+         */
+        public @NotNull String getProperty() {
+            if (this.property == null) {
+                throw new NoSuchElementException("no property field set");
+            }
+
+            return this.property;
+        }
+
+        /**
+         * Checks whether this {@code Placeholder} has a data-source property.
+         * @return {@code true}, if it has a data-source property. {@code false}, otherwise.
+         */
+        public boolean hasProperty() {
+            return this.property != null;
+        }
     }
 }

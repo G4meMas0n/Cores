@@ -1,15 +1,10 @@
 package com.github.g4memas0n.cores.database.query;
 
-import com.google.common.base.Preconditions;
+import com.github.g4memas0n.cores.database.driver.Driver;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Locale;
 import java.util.Map;
 import java.util.MissingResourceException;
@@ -27,14 +22,12 @@ public abstract class QueryLoader {
     private Map<String, String> cache;
 
     /**
-     * The reference to a parent query loader for this query file.<br>
-     * Must be set by the implementing class if a parent file is specified.
+     * The reference to a parent query loader for this query file.
      */
     protected QueryLoader parent;
 
     /**
-     * The reference to the location of the file that is currently loaded.<br>
-     * Must be set by the implementing class after the successful load of a file.
+     * The reference to the location of the file that is currently loaded.
      */
     protected String path;
 
@@ -48,19 +41,21 @@ public abstract class QueryLoader {
      * according to the implementing query loader.
      *
      * @param path the path of the file containing the queries.
-     * @throws IllegalArgumentException if the file located at the given {@code path} could not be found.
+     * @throws IllegalArgumentException if the file could not be found or contains illegal elements.
      * @throws IOException if the file could not be read or parsed.
+     * @see #load(InputStream)
      */
     public abstract void load(@NotNull final String path) throws IOException;
 
     /**
-     * Loads the batch file path that is located at the given batch {@code identifier} from the currently loaded
-     * queries file.
+     * Reads the queries file from the given {@code stream} and parses it according to the implementing loader.
      *
-     * @param identifier the string that uniquely identifies a batch file path.
-     * @return the loaded batch file path for the given {@code identifier} or null if it not exists.
+     * @param stream the input stream to read from.
+     * @throws IllegalArgumentException if the file contains illegal elements.
+     * @throws IOException if the stream could not be read or parsed.
+     * @see #load(String)
      */
-    protected abstract @Nullable String loadBatch(@NotNull final String identifier);
+    public abstract void load(@NotNull final InputStream stream) throws IOException;
 
     /**
      * Loads the query that is located at the given query {@code identifier} from the currently loaded queries file.
@@ -69,24 +64,6 @@ public abstract class QueryLoader {
      * @return the loaded query for the given {@code identifier} or null if it not exists.
      */
     protected abstract @Nullable String loadQuery(@NotNull final String identifier);
-
-    /**
-     * Gets the batch file path for the given batch {@code identifier} from the implementing query loader.
-     *
-      * @param identifier the string that uniquely identifies a batch file path.
-     * @return the batch file path for the given {@code identifier}.
-     * @throws MissingResourceException if no batch file path entry with the given {@code identifier} exists.
-     */
-    public final @NotNull String getBatch(@NotNull final String identifier) throws MissingResourceException {
-        final String path = loadBatch(identifier);
-
-        if (path == null) {
-            throw new MissingResourceException("missing batch key in queries file located at " + this.path,
-                    getClass().getSimpleName(), identifier);
-        }
-
-        return path;
-    }
 
     /**
      * Gets the query that for the given query {@code identifier} from the cache or loads it from the implementing
@@ -125,78 +102,91 @@ public abstract class QueryLoader {
     }
 
     /**
-     * Creates a new query loader and loads the file located at the given {@code path} from the {@link ClassLoader}.
-     * This method will check the file extension and will create a query loader according to it.
+     * Creates a new query loader for the queries file with the given {@code name} from the {@link ClassLoader} and
+     * loads and parses the file.
+     * <p><i>Currently only property and json files are supported as queries files.</i></p>
      *
-     * @param path the path of the file containing the queries.
-     * @return the newly created query loader that has already loaded the file.
-     * @throws IllegalArgumentException if the file could not be found.
+     * @param name the name of the queries file without an extension.
+     * @return the query loader for the queries file.
+     * @throws IllegalArgumentException if no file could be found or the file contains illegal elements.
      * @throws IOException if the file could not be read or parsed.
+     * @see #getLoader(String, Driver)
      */
-    public static @NotNull QueryLoader loadFile(@NotNull final String path) throws IOException {
-        Preconditions.checkArgument(path.contains("."), "file path is missing file extension");
-        QueryLoader loader;
+    public static @NotNull QueryLoader getLoader(@NotNull final String name) throws IOException {
+        final ClassLoader clazz = QueryLoader.class.getClassLoader();
+        QueryLoader loader = null;
+        String path;
 
-        switch (path.substring(path.lastIndexOf(".")).toLowerCase(Locale.ROOT)) {
-            case ".json":
-                loader = new JsonQueryLoader();
-                break;
+        try (InputStream stream = clazz.getResourceAsStream(path = name + ".properties")) {
+            if (stream != null) {
+                loader = new PropertyQueryLoader();
+                loader.load(path);
+                loader.path = path;
+            }
+        } catch (IllegalArgumentException ignored) {
 
-            case ".xml":
-                loader = new XmlQueryLoader();
-                break;
-
-            default:
-                throw new IllegalArgumentException("unsupported queries file extension");
         }
 
-        loader.load(path);
+        try (InputStream stream = clazz.getResourceAsStream(path = name + ".json")) {
+            if (stream != null) {
+                loader = new JsonQueryLoader();
+                loader.load(path);
+                loader.path = path;
+            }
+        } catch (IllegalArgumentException ignored) {
+
+        }
+
+        if (loader == null) {
+            throw new IllegalArgumentException("missing or unsupported file");
+        }
 
         return loader;
     }
 
     /**
-     * Loads the sql batch file located at the given {@code path} from the {@link ClassLoader} and adds the individual
-     * statements directly to the given {@link Statement}.
+     * Creates a new query loader for the queries file for the given {@code driver} with the given {@code basename} from
+     * the {@link ClassLoader} and loads and parses the file.
+     * <p><i>Currently only json and property files are supported as queries files.</i></p>
      *
-     * @param path the path of the sql batch file.
-     * @param statement the statement to add the loaded batch statements to.
-     * @throws IllegalArgumentException if the batch file could not be found.
+     * @param base the basename of the queries file without an extension.
+     * @param driver the driver to load the queries file for.
+     * @return the query loader for the queries file, including parent loaders.
+     * @throws IllegalArgumentException if no file could be found or the file contains illegal elements.
      * @throws IOException if the file could not be read or parsed.
-     * @throws SQLException if a sql exception occurs while adding batches to the statement.
+     * @see #getLoader(String)
      */
-    public static void loadBatch(@NotNull final String path, @NotNull final Statement statement) throws IOException, SQLException {
-        final InputStream stream = QueryLoader.class.getClassLoader().getResourceAsStream(path);
-        Preconditions.checkArgument(stream != null, "missing file at " + path);
+    public static @NotNull QueryLoader getLoader(@NotNull final String base, @NotNull final Driver driver) throws IOException {
+        StringBuilder builder = new StringBuilder(base);
+        QueryLoader temp, loader = null;
+        String name;
 
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
-            StringBuilder query = new StringBuilder();
-            String line;
-            int index;
+        do {
+            name = builder.toString();
 
-            while ((line = reader.readLine()) != null) {
-                // Check for comments in the current line
-                if ((index = line.indexOf("#")) >= 0) {
-                    if (index == 0) {
-                        continue;
-                    }
+            try {
+                temp = getLoader(name.toLowerCase(Locale.ROOT));
+                temp.parent = loader;
+                loader = temp;
+            } catch (IllegalArgumentException ignored) {
 
-                    line = line.substring(0, index).stripTrailing();
-                }
-
-                // Check for ending statements
-                while ((index = line.indexOf(";")) >= 0) {
-                    query.append(line.substring(0, index).stripLeading());
-                    statement.addBatch(query.toString());
-                    query.setLength(0);
-
-                    line = line.substring(index + 1);
-                }
-
-                query.append(line.stripLeading());
             }
-        } catch (RuntimeException ex) {
-            throw new IOException("unable to parse batch file at " + path, ex);
+
+            if (name.contains(driver.getType())) {
+                if (driver.getVersion() != null && !name.contains(driver.getVersion())) {
+                    builder.append("-").append(driver.getVersion());
+                } else {
+                    builder.setLength(0);
+                }
+            } else {
+                builder.append("_").append(driver.getType());
+            }
+        } while (builder.length() > 0);
+
+        if (loader == null) {
+            throw new IllegalArgumentException("missing or unsupported files");
         }
+
+        return loader;
     }
 }
