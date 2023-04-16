@@ -2,6 +2,7 @@ package com.github.g4memas0n.cores.bukkit.command;
 
 import com.github.g4memas0n.cores.bukkit.util.I18n;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -123,6 +124,24 @@ public abstract class BasicCommand<T extends JavaPlugin> {
                                     @NotNull final String[] arguments);
 
     /**
+     * Executes this command for the given {@code player} with the given {@code arguments}, returning its success.
+     * <p>
+     *     Note:<br>
+     *     This methods gets called automatically if the command is executed by a player. The default implementation
+     *     of this method, casts the player as sender and calls {@link #execute(CommandSender, String, String[])}.
+     * </p>
+     * @param player the player who executed the command.
+     * @param alias the alias that was used for the command.
+     * @param arguments the passed arguments of the player.
+     * @return {@code true} if the execution was successful and valid.
+     * @see #execute(CommandSender, String, String[])
+     */
+    public boolean execute(@NotNull final Player player, @NotNull final String alias,
+                           @NotNull final String[] arguments) {
+        return execute((CommandSender) player, alias, arguments);
+    }
+
+    /**
      * Requests a list of possible completions for the last element in the given {@code arguments} if it gets executed
      * by the given {@code sender}.
      * <p>
@@ -139,6 +158,26 @@ public abstract class BasicCommand<T extends JavaPlugin> {
      */
     public abstract @NotNull List<String> tabComplete(@NotNull final CommandSender sender, @NotNull final String alias,
                                                       @NotNull final String[] arguments);
+
+    /**
+     * Requests a list of possible completions for the last element in the given {@code arguments} if it gets executed
+     * by the given {@code player}.
+     * <p>
+     *     Note:<br>
+     *     This methods gets called automatically if the command is executed by a player. The default implementation
+     *     of this method, casts the player as sender and calls {@link #tabComplete(CommandSender, String, String[])}.
+     * </p>
+     * 
+     * @param player the player who tab-completed the command.
+     * @param alias the alias that was used for the command.
+     * @param arguments the passed arguments of the player, including the final partial argument to be completed.
+     * @return a list of possible completions for the final arguments.
+     * @see #tabComplete(CommandSender, String, String[]) 
+     */
+    public @NotNull List<String> tabComplete(@NotNull final Player player, @NotNull final String alias,
+                                             @NotNull final String[] arguments) {
+        return tabComplete((CommandSender) player, alias, arguments);
+    }
 
     @Override
     public @NotNull String toString() {

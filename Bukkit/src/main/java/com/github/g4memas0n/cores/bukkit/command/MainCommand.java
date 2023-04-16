@@ -5,6 +5,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabExecutor;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
@@ -114,7 +115,7 @@ public abstract class MainCommand<T extends JavaPlugin> extends BasicCommand<T> 
     }
 
     @Override
-    public final boolean onCommand(@NotNull final CommandSender sender, @NotNull final Command command,
+    public final boolean onCommand(@NotNull final CommandSender sender, @NotNull final Command ignored,
                                    @NotNull final String alias, @NotNull final String[] arguments) {
         final String permission = this.parent.getPermission() != null ? this.parent.getPermission() : this.permission;
 
@@ -128,39 +129,50 @@ public abstract class MainCommand<T extends JavaPlugin> extends BasicCommand<T> 
             return true;
         }
 
-        boolean invalid = false;
+        boolean failed = false;
 
         if (this.commands != null && arguments.length > 0) {
-            final BasicCommand<T> subcommand = this.commands.get(arguments[0].toLowerCase());
+            final BasicCommand<T> command = this.commands.get(arguments[0].toLowerCase());
 
-            if (subcommand != null && (subcommand.permission == null || sender.hasPermission(subcommand.permission))) {
+            if (command != null && (command.permission == null || sender.hasPermission(command.permission))) {
                 final String[] args = Arrays.copyOfRange(arguments, 1, arguments.length);
 
-                if (!subcommand.argsInRange(arguments.length) || !subcommand.execute(sender, subcommand.name, args)) {
-                    if (subcommand.hasUsage()) {
-                        if (subcommand.hasDescription()) {
-                            sender.sendMessage(Objects.requireNonNull(subcommand.getDescription()));
-                        }
-
-                        sender.sendMessage(Objects.requireNonNull(subcommand.getUsage()).replace("<command>", subcommand.name));
+                if (command.argsInRange(arguments.length)) {
+                    if (sender instanceof Player
+                            ? command.execute((Player) sender, command.name, args)
+                            : command.execute(sender, command.name, args)) {
                         return true;
                     }
-
-                    invalid = true;
                 }
+
+                if (command.hasUsage()) {
+                    if (command.hasDescription()) {
+                        sender.sendMessage(Objects.requireNonNull(command.getDescription()));
+                    }
+
+                    sender.sendMessage(Objects.requireNonNull(command.getUsage()).replace("<command>", command.name));
+                    return true;
+                }
+
+                failed = true;
             }
         }
 
-        if (invalid || !argsInRange(arguments.length) || !execute(sender, alias, arguments)) {
-            if (hasUsage()) {
-                if (hasDescription()) {
-                    sender.sendMessage(Objects.requireNonNull(getDescription()));
-                }
-
-                sender.sendMessage(Objects.requireNonNull(getUsage()).replace("<command>", alias));
+        if (!failed && argsInRange(arguments.length)) {
+            if (sender instanceof Player
+                    ? execute((Player) sender, alias, arguments)
+                    : execute(sender, alias, arguments)) {
+                return true;
             }
         }
 
+        if (hasUsage()) {
+            if (hasDescription()) {
+                sender.sendMessage(Objects.requireNonNull(getDescription()));
+            }
+
+            sender.sendMessage(Objects.requireNonNull(getUsage()).replace("<command>", alias));
+        }
         return true;
     }
 
@@ -180,7 +192,9 @@ public abstract class MainCommand<T extends JavaPlugin> extends BasicCommand<T> 
                 final String[] args = Arrays.copyOfRange(arguments, 1, arguments.length);
 
                 if (subcommand.argsInRange(arguments.length)) {
-                    return subcommand.tabComplete(sender, subcommand.name, args);
+                    return sender instanceof Player
+                            ? subcommand.tabComplete((Player) sender, subcommand.name, args)
+                            : subcommand.tabComplete(sender, subcommand.name, args);
                 }
 
                 return Collections.emptyList();
@@ -200,7 +214,9 @@ public abstract class MainCommand<T extends JavaPlugin> extends BasicCommand<T> 
         }
 
         if (argsInRange(arguments.length)) {
-            completions.addAll(tabComplete(sender, alias, arguments));
+            completions.addAll(sender instanceof Player
+                    ? tabComplete((Player) sender, alias, arguments)
+                    : tabComplete(sender, alias, arguments));
         }
 
         Collections.sort(completions);
