@@ -26,9 +26,15 @@ public class Driver {
      * @param type the type of the database driver like 'MySQL' and/or 'SQLite', etc...
      * @param version the version of the database type or null if not specified.
      * @param url the jdbc url for the driver class or null if not required.
+     * @throws java.lang.IllegalArgumentException if driver class is not assignable from {@link java.sql.Driver} or
+     *                                            {@link javax.sql.DataSource}.
      */
     public Driver(@NotNull final Class<?> source, @NotNull final String type,
                   @Nullable final String version, @Nullable final String url) {
+        if (!java.sql.Driver.class.isAssignableFrom(source) || !javax.sql.DataSource.class.isAssignableFrom(source)) {
+            throw new IllegalArgumentException("illegal source class");
+        }
+
         this.source = source;
         this.type = type;
         this.version = version;
@@ -42,13 +48,21 @@ public class Driver {
      * @param type the type of the database driver like 'MySQL' and/or 'SQLite', etc...
      * @param version the version of the database type or null if not specified.
      * @param url the jdbc url for the driver class or null if not required.
+     * @throws java.lang.IllegalArgumentException if driver class is not found or is not assignable from
+     *                                            {@link java.sql.Driver} or {@link javax.sql.DataSource}.
      */
     public Driver(@NotNull final String clazz, @NotNull final String type,
                   @Nullable final String version, @Nullable final String url) {
         try {
-            this.source = Class.forName(clazz);
+            Class<?> source = Class.forName(clazz);
+
+            if (!java.sql.Driver.class.isAssignableFrom(source) || !javax.sql.DataSource.class.isAssignableFrom(source)) {
+                throw new IllegalArgumentException("illegal source class");
+            }
+
+            this.source = source;
         } catch (ClassNotFoundException ex) {
-            throw new IllegalArgumentException("class not found");
+            throw new IllegalArgumentException("missing source class");
         }
 
         this.type = type;

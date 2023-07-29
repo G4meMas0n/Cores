@@ -20,25 +20,22 @@ import java.util.Locale;
 public class BatchLoader {
 
     /**
-     * Loads and parses the sql batch file with the given {@code name} from the {@link ClassLoader} and adds the batch
-     * statements to the given {@link Statement}.
+     * Gets batch statements using the specified base name and add these to the specified connection.
+     * This method loads the sql file that is visible to the class loader of this class.
      *
-     * @param name the name of the batch file with or without the extension.
-     * @param statement the statement to add the batch statements to.
-     * @throws IllegalArgumentException if no batch file could not be found.
-     * @throws IOException if the file could not be read or parsed.
-     * @throws SQLException if a database error occurs while adding the batch statements.
+     * @param base the base name of the batch file.
+     * @param statement a statement to add the batch to.
+     * @throws IllegalArgumentException if the file is not visible to the class loader or contains a malformed Unicode
+     *                                  escape sequence.
+     * @throws IOException if an I/O error occurs.
+     * @throws SQLException if a database error occurs.
      * @see #getBatch(String, Driver, Statement)
      */
-    public static void getBatch(@NotNull final String name, @NotNull final Statement statement) throws IOException, SQLException {
-        String path = name;
-
-        if (!name.contains(".") || !name.substring(name.lastIndexOf(".")).equalsIgnoreCase(".sql")) {
-            path += ".sql";
-        }
+    public static void getBatch(@NotNull String base, @NotNull final Statement statement) throws IOException, SQLException {
+        final String path = base.toLowerCase(Locale.ROOT) + ".sql";
 
         try (InputStream stream = BatchLoader.class.getClassLoader().getResourceAsStream(path)) {
-            Preconditions.checkArgument(stream != null, "missing file at " + path);
+            Preconditions.checkArgument(stream != null, "missing batch file");
             BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
             StringBuilder query = new StringBuilder();
             String line;
@@ -65,19 +62,22 @@ public class BatchLoader {
 
                 query.append(line.stripLeading());
             }
+
+            reader.close();
         }
     }
 
     /**
-     * Loads and parses the sql batch file for the given {@code driver} with the given {@code basename} from the
-     * {@link ClassLoader} and adds the batch statements to the given {@link Statement}.
+     * Gets batch statements using the specified base name and driver and add these to the specified connection.
+     * This method loads the sql file that is visible to the class loader of this class.
      *
-     * @param base the basename of the batch file without the extension.
-     * @param driver the driver to load the batch file for.
-     * @param statement the statement to add the batch statements to.
-     * @throws IllegalArgumentException if no batch file could not be found.
-     * @throws IOException if the file could not be read or parsed.
-     * @throws SQLException if a database error occurs while adding the batch statements.
+     * @param base the base name of the batch file.
+     * @param driver the driver for which a batch file is desired.
+     * @param statement a statement to add the batch to.
+     * @throws IllegalArgumentException if the file is not visible to the class loader or contains a malformed Unicode
+     *                                  escape sequence.
+     * @throws IOException if an I/O error occurs.
+     * @throws SQLException if a database error occurs.
      * @see #getBatch(String, Statement)
      */
     public static void getBatch(@NotNull final String base, @NotNull final Driver driver,
@@ -112,6 +112,6 @@ public class BatchLoader {
         } while (builder.length() > 0);
 
         // no batch could be found/loaded
-        throw new IllegalArgumentException("missing batch files");
+        throw new IllegalArgumentException("missing or unsupported files");
     }
 }

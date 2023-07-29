@@ -11,7 +11,7 @@
 
     <name>Database Core</name>
     <artifactId>cores-database</artifactId>
-    <version>1.0.0-dev</version>
+    <version>1.0.0-pre</version>
 
     <dependencies>
         <dependency>

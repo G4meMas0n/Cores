@@ -2,7 +2,6 @@ package com.github.g4memas0n.cores.database.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -11,36 +10,15 @@ import java.nio.charset.StandardCharsets;
 
 public class JsonQueryLoaderTest {
 
-    private JsonQueryLoader loader;
-
-    @Before
-    public void setup() {
-        this.loader = new JsonQueryLoader();
-    }
-
     @Test(expected = IllegalArgumentException.class)
     public void loadIllegalFileTest() {
         final String illegal = "[ ]";
 
         try (InputStream stream = new ByteArrayInputStream(illegal.getBytes(StandardCharsets.UTF_8))) {
-            this.loader.load(stream);
+            new JsonQueryLoader(stream);
         } catch (IOException ex) {
             Assert.fail(ex.toString());
         }
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void loadMissingFileTest() {
-        try {
-            this.loader.load("database/missing.json");
-        } catch (IOException ex) {
-            Assert.fail(ex.getMessage());
-        }
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void loadDriverOnNotLoadedFileTest() {
-        this.loader.loadQuery("identifier");
     }
 
     @Test
@@ -93,13 +71,13 @@ public class JsonQueryLoaderTest {
 
     public void loadAndTest(@NotNull final String file, @NotNull final String key, @NotNull final String value) {
         try (InputStream stream = new ByteArrayInputStream(file.getBytes(StandardCharsets.UTF_8))) {
-            this.loader.load(stream);
+            JsonQueryLoader loader = new JsonQueryLoader(stream);
+            String query = loader.load(key);
+
+            Assert.assertNotNull("missing query", query);
+            Assert.assertEquals("non-matching query", value, query);
         } catch (IOException ex) {
             Assert.fail(ex.toString());
         }
-
-        String query = this.loader.loadQuery(key);
-        Assert.assertNotNull("missing query", query);
-        Assert.assertEquals("non-matching query", value, query);
     }
 }

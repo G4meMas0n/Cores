@@ -1,6 +1,7 @@
 package com.github.g4memas0n.cores.database.query;
 
 import com.github.g4memas0n.cores.database.driver.Driver;
+import com.google.common.collect.Maps;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
@@ -8,12 +9,11 @@ import java.io.InputStream;
 import java.util.Locale;
 import java.util.Map;
 import java.util.MissingResourceException;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * A loader for files, that contains mappings from identifiers to actual sql queries.<br>
- * The loading of the file and of the queries will be handled by the implementing class. This class provides a cache
- * for sql queries, so that the queries get not loaded multiple times from the file.
+ * A loader for files, that contains mappings from keys to actual sql queries.<br>
+ * The loading and parsing of the file and of the queries will be handled by the implementing class.
+ * This base class provides a cache for sql queries, so that the queries get not loaded multiple times from the file.
  *
  * @since 1.0.0
  */
@@ -22,14 +22,9 @@ public abstract class QueryLoader {
     private Map<String, String> cache;
 
     /**
-     * The reference to a parent query loader for this query file.
+     * The parent query loader of this loader.
      */
     protected QueryLoader parent;
-
-    /**
-     * The reference to the location of the file that is currently loaded.
-     */
-    protected String path;
 
     /**
      * Protected default constructor for the implementing query loader classes.
@@ -37,123 +32,83 @@ public abstract class QueryLoader {
     protected QueryLoader() { }
 
     /**
-     * Loads the file located at the given {@code path} from the {@link ClassLoader} and parses it as queries file
-     * according to the implementing query loader.
+     * Loads a query for the given key from this query loader.
+     * Returns null if this query loader does not contain a query for the given key.
      *
-     * @param path the path of the file containing the queries.
-     * @throws IllegalArgumentException if the file could not be found or contains illegal elements.
-     * @throws IOException if the file could not be read or parsed.
-     * @see #load(InputStream)
+     * @param key the key for the desired query.
+     * @return the query for the given key, or null.
      */
-    public abstract void load(@NotNull final String path) throws IOException;
+    protected abstract @Nullable String load(@NotNull final String key);
 
     /**
-     * Reads the queries file from the given {@code stream} and parses it according to the implementing loader.
+     * Gets a query for the given key from this query loader or one of its parents.
      *
-     * @param stream the input stream to read from.
-     * @throws IllegalArgumentException if the file contains illegal elements.
-     * @throws IOException if the stream could not be read or parsed.
-     * @see #load(String)
+     * @param key the key for the desired query.
+     * @return the query for the given key.
+     * @throws MissingResourceException if no query for the given key can be found.
      */
-    public abstract void load(@NotNull final InputStream stream) throws IOException;
-
-    /**
-     * Loads the query that is located at the given query {@code identifier} from the currently loaded queries file.
-     *
-     * @param identifier the string that uniquely identifies a query.
-     * @return the loaded query for the given {@code identifier} or null if it not exists.
-     */
-    protected abstract @Nullable String loadQuery(@NotNull final String identifier);
-
-    /**
-     * Gets the query that for the given query {@code identifier} from the cache or loads it from the implementing
-     * query loader, if it has not been already cached.
-     *
-     * @param identifier the string that uniquely identifies a query.
-     * @return the query for the given {@code identifier}.
-     * @throws MissingResourceException if no query entry with the given {@code identifier} exists.
-     */
-    public final @NotNull String getQuery(@NotNull final String identifier) throws MissingResourceException {
-        String query;
+    public final @NotNull String get(@NotNull final String key) throws MissingResourceException {
+        String query = null;
 
         if (this.cache != null) {
-            query = this.cache.get(identifier);
+            query = this.cache.get(key);
 
             if (query != null) {
                 return query;
             }
         } else {
-            this.cache = new ConcurrentHashMap<>();
+            this.cache = Maps.newConcurrentMap();
         }
 
-        query = loadQuery(identifier);
+        QueryLoader loader = this;
 
-        if (query == null) {
-            query = this.parent != null ? this.parent.loadQuery(identifier) : null;
+        while (loader != null) {
+            query = loader.load(key);
 
-            if (query == null) {
-                throw new MissingResourceException("missing key in queries file located at " + this.path,
-                        getClass().getSimpleName(), identifier);
+            if (query != null) {
+                this.cache.put(key, query);
+                return query;
             }
+
+            loader = loader.parent;
         }
 
-        this.cache.put(identifier, query);
-        return query;
+        throw new MissingResourceException("missing query for key", getClass().getSimpleName(), key);
     }
 
     /**
-     * Creates a new query loader for the queries file with the given {@code name} from the {@link ClassLoader} and
-     * loads and parses the file.
-     * <p><i>Currently only property and json files are supported as queries files.</i></p>
+     * Gets a query loader using the specified base name.
+     * This method loads the property queries file that is visible to the class loader of this class.
      *
-     * @param name the name of the queries file without an extension.
-     * @return the query loader for the queries file.
-     * @throws IllegalArgumentException if no file could be found or the file contains illegal elements.
-     * @throws IOException if the file could not be read or parsed.
+     * @param base the base name of the queries file.
+     * @return a query loader for the given base name.
+     * @throws IllegalArgumentException if the file is not visible to the class loader or contains a malformed Unicode
+     *                                  escape sequence.
+     * @throws IOException if an I/O error occurs.
      * @see #getLoader(String, Driver)
      */
-    public static @NotNull QueryLoader getLoader(@NotNull final String name) throws IOException {
-        final ClassLoader clazz = QueryLoader.class.getClassLoader();
-        QueryLoader loader = null;
-        String path;
+    public static @NotNull QueryLoader getLoader(@NotNull final String base) throws IOException {
+        final String path = base.toLowerCase(Locale.ROOT) + ".properties";
 
-        try (InputStream stream = clazz.getResourceAsStream(path = name + ".properties")) {
-            if (stream != null) {
-                loader = new PropertyQueryLoader();
-                loader.load(path);
-                loader.path = path;
+        try (InputStream stream = QueryLoader.class.getClassLoader().getResourceAsStream(path)) {
+            if (stream == null) {
+                throw new IllegalArgumentException("missing property file");
             }
-        } catch (IllegalArgumentException ignored) {
 
+            return new PropertyQueryLoader(stream);
         }
-
-        try (InputStream stream = clazz.getResourceAsStream(path = name + ".json")) {
-            if (stream != null) {
-                loader = new JsonQueryLoader();
-                loader.load(path);
-                loader.path = path;
-            }
-        } catch (IllegalArgumentException ignored) {
-
-        }
-
-        if (loader == null) {
-            throw new IllegalArgumentException("missing or unsupported file");
-        }
-
-        return loader;
     }
 
     /**
-     * Creates a new query loader for the queries file for the given {@code driver} with the given {@code basename} from
-     * the {@link ClassLoader} and loads and parses the file.
-     * <p><i>Currently only json and property files are supported as queries files.</i></p>
+     * Gets a query loader using the specified base name and driver.
+     * This method loads the property queries file that is visible to the class loader of this class.
      *
-     * @param base the basename of the queries file without an extension.
-     * @param driver the driver to load the queries file for.
-     * @return the query loader for the queries file, including parent loaders.
-     * @throws IllegalArgumentException if no file could be found or the file contains illegal elements.
-     * @throws IOException if the file could not be read or parsed.
+     * @param base the base name of the queries file.
+     * @param driver the driver for which a queries file is desired.
+     * @return a query loader for the given base name.
+     * @throws IllegalArgumentException if the file is not visible to the class loader or contains a malformed Unicode
+     *                                  escape sequence.
+     * @throws IOException if an I/O error occurs.
      * @see #getLoader(String)
      */
     public static @NotNull QueryLoader getLoader(@NotNull final String base, @NotNull final Driver driver) throws IOException {

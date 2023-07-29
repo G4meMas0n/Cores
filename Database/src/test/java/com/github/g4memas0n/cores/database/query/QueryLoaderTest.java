@@ -33,20 +33,14 @@ public class QueryLoaderTest {
         }
 
         Assert.assertNotNull("missing loader", loader);
-        Assert.assertNotNull("missing path", loader.path);
-        Assert.assertEquals("non-matching path", "database/queries_driver-1.properties", loader.path);
-        Assert.assertEquals("non-matching query", "Query (driver-version)", loader.loadQuery("identifier"));
+        Assert.assertEquals("non-matching query", "Query (driver-version)", loader.load("key"));
 
         loader = loader.parent;
         Assert.assertNotNull("missing parent loader", loader);
-        Assert.assertNotNull("missing parent path", loader.path);
-        Assert.assertEquals("non-matching parent path", "database/queries_driver.properties", loader.path);
-        Assert.assertEquals("non-matching parent query", "Query (driver)", loader.loadQuery("identifier"));
+        Assert.assertEquals("non-matching parent query", "Query (driver)", loader.load("key"));
 
         loader = loader.parent;
         Assert.assertNotNull("missing base loader", loader);
-        Assert.assertNotNull("missing base path", loader.path);
-        Assert.assertEquals("non-matching base path", "database/queries.properties", loader.path);
-        Assert.assertEquals("non-matching base query", "Query", loader.loadQuery("identifier"));
+        Assert.assertEquals("non-matching base query", "Query", loader.load("key"));
     }
 }
