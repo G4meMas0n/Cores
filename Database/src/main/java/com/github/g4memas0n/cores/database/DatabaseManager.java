@@ -5,6 +5,7 @@ import com.google.common.base.Preconditions;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -104,13 +105,9 @@ public abstract class DatabaseManager {
 
             this.source = source;
         } catch (SQLException ex) {
-            getLogger().log(Level.WARNING, "Failed to establish connection", ex);
+            getLogger().log(Level.WARNING, "Failed to establish connection or initialize data source", ex);
             disconnect();
-            throw new DatabaseException("connection failed");
-        } catch (DatabaseException ex) {
-            getLogger().log(Level.WARNING, "Failed to initialize database", ex);
-            disconnect();
-            throw ex;
+            throw new DatabaseException("connection or initialization failed");
         }
     }
 
@@ -138,7 +135,7 @@ public abstract class DatabaseManager {
             }
 
             this.config.setJdbcUrl(jdbc);
-        } else if (javax.sql.DataSource.class.isAssignableFrom(driver.getSource())) {
+        } else if (javax.sql.DataSource.class.isAssignableFrom(this.driver.getSource())) {
             String placeholder, value;
             boolean dirty = false;
 
@@ -179,16 +176,24 @@ public abstract class DatabaseManager {
     }
 
     /*
-     * Abstract methods:
+     * Protected methods:
      */
+
+    /**
+     * Returns the loaded data source driver if already set.
+     * @return the loaded data source driver.
+     */
+    protected @Nullable Driver driver() {
+        return this.driver;
+    }
 
     /**
      * Initializes the connected database.
      * This method will automatically be called after a connection to the data source has been established.
      * @param connection an active connection from the connected data source.
-     * @throws DatabaseException if the initialization fails.
+     * @throws SQLException if the initialization fails.
      */
-    protected abstract void initialize(@NotNull final Connection connection) throws DatabaseException;
+    protected abstract void initialize(@NotNull final Connection connection) throws SQLException;
 
     /*
      * Methods for handling database connections:
@@ -208,6 +213,26 @@ public abstract class DatabaseManager {
             return this.source.getConnection();
         } catch (SQLException ex) {
             getLogger().log(Level.WARNING, "Failed to fetch connection to database", ex);
+            throw ex;
+        }
+    }
+
+    /**
+     * Fetches or opens a connection to the database by calling the appropriate method on connected data source and
+     * starts a new transaction on it.<br>
+     *
+     * @return a valid connection session to the database, or null.
+     * @throws IllegalStateException if no connection to a database is established.
+     * @throws SQLException if it fails to fetch a connection.
+     */
+    public final @NotNull Connection transaction() throws SQLException {
+        Connection connection = fetch();
+
+        try {
+            connection.setAutoCommit(false);
+            return connection;
+        } catch (SQLException ex) {
+            getLogger().log(Level.WARNING, "Failed to begin transaction on fetched connection to database", ex);
             throw ex;
         }
     }

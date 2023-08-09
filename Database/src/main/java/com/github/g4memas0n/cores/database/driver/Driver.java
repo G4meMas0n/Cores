@@ -26,7 +26,7 @@ public class Driver {
      * @param type the type of the database driver like 'MySQL' and/or 'SQLite', etc...
      * @param version the version of the database type or null if not specified.
      * @param url the jdbc url for the driver class or null if not required.
-     * @throws java.lang.IllegalArgumentException if driver class is not assignable from {@link java.sql.Driver} or
+     * @throws IllegalArgumentException if driver class is not assignable from {@link java.sql.Driver} or
      *                                            {@link javax.sql.DataSource}.
      */
     public Driver(@NotNull final Class<?> source, @NotNull final String type,
@@ -48,7 +48,7 @@ public class Driver {
      * @param type the type of the database driver like 'MySQL' and/or 'SQLite', etc...
      * @param version the version of the database type or null if not specified.
      * @param url the jdbc url for the driver class or null if not required.
-     * @throws java.lang.IllegalArgumentException if driver class is not found or is not assignable from
+     * @throws IllegalArgumentException if driver class is not found or is not assignable from
      *                                            {@link java.sql.Driver} or {@link javax.sql.DataSource}.
      */
     public Driver(@NotNull final String clazz, @NotNull final String type,
