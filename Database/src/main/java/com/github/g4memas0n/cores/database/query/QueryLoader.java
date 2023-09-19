@@ -1,14 +1,14 @@
 package com.github.g4memas0n.cores.database.query;
 
 import com.github.g4memas0n.cores.database.driver.Driver;
-import com.google.common.collect.Maps;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
-import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Locale;
 import java.util.Map;
 import java.util.MissingResourceException;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A loader for files, that contains mappings from keys to actual sql queries.<br>
@@ -19,7 +19,7 @@ import java.util.MissingResourceException;
  */
 public abstract class QueryLoader {
 
-    private Map<String, String> cache;
+    private final Map<String, String> cache;
 
     /**
      * The parent query loader of this loader.
@@ -29,7 +29,9 @@ public abstract class QueryLoader {
     /**
      * Protected default constructor for the implementing query loader classes.
      */
-    protected QueryLoader() { }
+    protected QueryLoader() {
+        this.cache = new ConcurrentHashMap<>();
+    }
 
     /**
      * Loads a query for the given key from this query loader.
@@ -48,71 +50,70 @@ public abstract class QueryLoader {
      * @throws MissingResourceException if no query for the given key can be found.
      */
     public final @NotNull String get(@NotNull final String key) throws MissingResourceException {
-        String query = null;
+        String query = this.cache.get(key);
 
-        if (this.cache != null) {
-            query = this.cache.get(key);
+        if (query == null) {
+            QueryLoader loader = this;
 
-            if (query != null) {
-                return query;
-            }
-        } else {
-            this.cache = Maps.newConcurrentMap();
-        }
+            while (loader != null) {
+                query = loader.load(key);
 
-        QueryLoader loader = this;
+                if (query != null) {
+                    this.cache.put(key, query);
+                    return query;
+                }
 
-        while (loader != null) {
-            query = loader.load(key);
-
-            if (query != null) {
-                this.cache.put(key, query);
-                return query;
+                loader = loader.parent;
             }
 
-            loader = loader.parent;
+            throw new MissingResourceException("missing query for key", getClass().getSimpleName(), key);
         }
 
-        throw new MissingResourceException("missing query for key", getClass().getSimpleName(), key);
+        return query;
     }
 
     /**
-     * Gets a query loader using the specified base name.
-     * This method loads the property queries file that is visible to the class loader of this class.
+     * Gets a query loader using the specified loader class and the basename.
+     * This method loads the queries file that is visible to the class loader of the given class.
      *
-     * @param base the base name of the queries file.
-     * @return a query loader for the given base name.
-     * @throws IllegalArgumentException if the file is not visible to the class loader or contains a malformed Unicode
-     *                                  escape sequence.
+     * @param clazz the implementing loader class to use.
+     * @param basename the basename of the queries file.
+     * @return a query loader for the given basename.
+     * @throws IllegalArgumentException if the file is not visible or contains a malformed Unicode escape sequence.
      * @throws IOException if an I/O error occurs.
-     * @see #getLoader(String, Driver)
+     * @see #getLoader(Class, String, Driver)
      */
-    public static @NotNull QueryLoader getLoader(@NotNull final String base) throws IOException {
-        final String path = base.toLowerCase(Locale.ROOT) + ".properties";
-
-        try (InputStream stream = QueryLoader.class.getClassLoader().getResourceAsStream(path)) {
-            if (stream == null) {
-                throw new IllegalArgumentException("missing property file");
+    public static @NotNull QueryLoader getLoader(@NotNull final Class<? extends QueryLoader> clazz,
+                                                 @NotNull final String basename) throws IOException {
+        try {
+            return clazz.getConstructor(String.class).newInstance(basename.toLowerCase(Locale.ROOT));
+        } catch (InvocationTargetException ex) {
+            if (ex.getCause() instanceof IOException) {
+                throw (IOException) ex.getCause();
             }
 
-            return new PropertyQueryLoader(stream);
+            throw (IllegalArgumentException) ex.getCause();
+        } catch (ReflectiveOperationException ex) {
+            throw new IllegalArgumentException("illegal constructor", ex);
         }
     }
 
     /**
      * Gets a query loader using the specified base name and driver.
-     * This method loads the property queries file that is visible to the class loader of this class.
+     * This method loads the queries file that is visible to the class loader of the given class.
      *
-     * @param base the base name of the queries file.
+     * @param clazz the implementing loader class to use.
+     * @param basename the base name of the queries file, including the extension.
      * @param driver the driver for which a queries file is desired.
      * @return a query loader for the given base name.
-     * @throws IllegalArgumentException if the file is not visible to the class loader or contains a malformed Unicode
-     *                                  escape sequence.
+     * @throws IllegalArgumentException if the file is not visible or contains a malformed Unicode escape sequence.
      * @throws IOException if an I/O error occurs.
-     * @see #getLoader(String)
+     * @see #getLoader(Class, String)
      */
-    public static @NotNull QueryLoader getLoader(@NotNull final String base, @NotNull final Driver driver) throws IOException {
-        StringBuilder builder = new StringBuilder(base);
+    public static @NotNull QueryLoader getLoader(@NotNull final Class<? extends QueryLoader> clazz,
+                                                 @NotNull final String basename,
+                                                 @NotNull final Driver driver) throws IOException {
+        StringBuilder builder = new StringBuilder(basename);
         QueryLoader temp, loader = null;
         String name;
 
@@ -120,7 +121,7 @@ public abstract class QueryLoader {
             name = builder.toString();
 
             try {
-                temp = getLoader(name.toLowerCase(Locale.ROOT));
+                temp = getLoader(clazz, name.toLowerCase(Locale.ROOT));
                 temp.parent = loader;
                 loader = temp;
             } catch (IllegalArgumentException ignored) {

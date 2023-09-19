@@ -16,7 +16,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A manager for database connections and transactions.<br>
+ * A manager for database connections and transactions.
  * This class must be extended by an implementing class to initialize the database after the connection setup.
  *
  * @since 1.0.0
@@ -42,10 +42,9 @@ public abstract class DatabaseManager {
      */
 
     /**
-     * Loads the data source using the given driver.<br>
+     * Loads the data source using the given driver.
      * If the source class returned by the given driver implements the {@link java.sql.Driver} interface, the driver
      * must specify a valid jdbc url.
-     *
      * @param driver a database driver to load.
      * @throws IllegalArgumentException if the given driver is missing a jdbc-url.
      * @throws IllegalStateException if a database connection is already established.
@@ -53,7 +52,7 @@ public abstract class DatabaseManager {
      */
     public final void load(@NotNull final Driver driver) throws DatabaseException {
         Preconditions.checkState(this.source == null, "connection already established");
-        HikariConfig config = new HikariConfig(driver.getProperties());
+        HikariConfig config = new HikariConfig();
 
         try {
             if (java.sql.Driver.class.isAssignableFrom(driver.getSource())) {
@@ -80,7 +79,6 @@ public abstract class DatabaseManager {
      * Connects to a data source, expecting that all required settings are already set.
      * If the connection to the data source has established successfully, the {@link #initialize(Connection)} method
      * will be automatically called to initialize the data source.
-     *
      * @throws DatabaseException if the connection or initialization fails.
      * @see #connect(Properties)
      */
@@ -112,10 +110,9 @@ public abstract class DatabaseManager {
     }
 
     /**
-     * Connects to a data source using the given connection properties.<br>
+     * Connects to a data source using the given connection properties.
      * This method will check for all occurrences of the property keys in the data source properties and replaces them
      * with the corresponding values.
-     *
      * @param properties properties for replacing placeholders.
      * @throws DatabaseException if the connection or initialization fails.
      * @see #connect()
@@ -137,22 +134,17 @@ public abstract class DatabaseManager {
             this.config.setJdbcUrl(jdbc);
         } else if (javax.sql.DataSource.class.isAssignableFrom(this.driver.getSource())) {
             String placeholder, value;
-            boolean dirty = false;
 
-            for (Map.Entry<Object, Object> property : this.config.getDataSourceProperties().entrySet()) {
+            for (Map.Entry<Object, Object> property : Objects.requireNonNull(this.driver.getProperties()).entrySet()) {
                 value = property.getValue().toString();
 
                 for (Map.Entry<Object, Object> entry : properties.entrySet()) {
                     if (value.contains(placeholder = "{" + entry.getKey() + "}")) {
                         value = value.replace(placeholder, entry.getValue().toString());
-                        dirty = true;
                     }
                 }
 
-                if (dirty) {
-                    property.setValue(value);
-                    dirty = false;
-                }
+                this.config.addDataSourceProperty(property.getKey().toString(), value);
             }
         }
 
@@ -162,7 +154,7 @@ public abstract class DatabaseManager {
     }
 
     /**
-     * Disconnects from and shutdowns the connected data source.<br>
+     * Disconnects from and shutdowns the connected data source.
      * Calling this method has no effect if no connection is established.
      */
     public final void disconnect() {
@@ -200,8 +192,7 @@ public abstract class DatabaseManager {
      */
 
     /**
-     * Fetches or opens a connection to the database by calling the appropriate method on connected data source.<br>
-     *
+     * Fetches or opens a connection to the database by calling the appropriate method on connected data source.
      * @return a valid connection session to the database, or null.
      * @throws IllegalStateException if no connection to a database is established.
      * @throws SQLException if it fails to fetch a connection.
@@ -219,8 +210,7 @@ public abstract class DatabaseManager {
 
     /**
      * Fetches or opens a connection to the database by calling the appropriate method on connected data source and
-     * starts a new transaction on it.<br>
-     *
+     * starts a new transaction on it.
      * @return a valid connection session to the database, or null.
      * @throws IllegalStateException if no connection to a database is established.
      * @throws SQLException if it fails to fetch a connection.
@@ -243,7 +233,6 @@ public abstract class DatabaseManager {
 
     /**
      * Returns the logger for this class, which will also be used from the driver and query loaders.
-     *
      * @return the logger instance for this class.
      * @throws IllegalStateException if the logger for this class is not set.
      */

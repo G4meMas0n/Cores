@@ -20,7 +20,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 
 /**
- * An implementing driver loader that loads the driver information from a json file.<br>
+ * An implementing driver loader that loads the driver information from a json file.
  * This loader will only accept json files that are formed properly, like this example:
  * <pre><code>
  * [
@@ -70,7 +70,6 @@ public class JsonDriverLoader extends DriverLoader {
      * Creates a new json driver loader from an {@link InputStream}.
      * This constructor reads the json file in UTF-8 by default. If any other charset is other, the constructor
      * {@link #JsonDriverLoader(Reader)} may be used.
-     *
      * @param stream an InputStream that represents a json file to read from.
      * @throws IllegalArgumentException if stream contains a malformed Unicode escape sequence.
      * @throws IOException if an I/O error occurs.
@@ -120,7 +119,6 @@ public class JsonDriverLoader extends DriverLoader {
 
     /**
      * Loads a driver from the given json object by reading the key/value pairs.
-     *
      * @param object the json object representing a driver.
      * @return a driver representation for the given object.
      * @throws IllegalArgumentException if the json object represents an illegal driver.

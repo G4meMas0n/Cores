@@ -22,11 +22,9 @@ public class BatchLoader {
     /**
      * Gets batch statements using the specified base name and add these to the specified connection.
      * This method loads the sql file that is visible to the class loader of this class.
-     *
      * @param base the base name of the batch file.
      * @param statement a statement to add the batch to.
-     * @throws IllegalArgumentException if the file is not visible to the class loader or contains a malformed Unicode
-     *                                  escape sequence.
+     * @throws IllegalArgumentException if the file is not visible or contains a malformed Unicode escape sequence.
      * @throws IOException if an I/O error occurs.
      * @throws SQLException if a database error occurs.
      * @see #getBatch(String, Driver, Statement)
@@ -70,12 +68,10 @@ public class BatchLoader {
     /**
      * Gets batch statements using the specified base name and driver and add these to the specified connection.
      * This method loads the sql file that is visible to the class loader of this class.
-     *
      * @param base the base name of the batch file.
      * @param driver the driver for which a batch file is desired.
      * @param statement a statement to add the batch to.
-     * @throws IllegalArgumentException if the file is not visible to the class loader or contains a malformed Unicode
-     *                                  escape sequence.
+     * @throws IllegalArgumentException if the file is not visible or contains a malformed Unicode escape sequence.
      * @throws IOException if an I/O error occurs.
      * @throws SQLException if a database error occurs.
      * @see #getBatch(String, Statement)

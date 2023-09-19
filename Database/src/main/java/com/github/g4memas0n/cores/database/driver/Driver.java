@@ -21,7 +21,6 @@ public class Driver {
 
     /**
      * Public constructor for creating a driver representation.
-     *
      * @param source the driver class implementing {@link java.sql.Driver} or {@link javax.sql.DataSource}.
      * @param type the type of the database driver like 'MySQL' and/or 'SQLite', etc...
      * @param version the version of the database type or null if not specified.
@@ -43,13 +42,12 @@ public class Driver {
 
     /**
      * Public constructor for creating a driver representation.
-     *
      * @param clazz the name of a driver class implementing {@link java.sql.Driver} or {@link javax.sql.DataSource}.
      * @param type the type of the database driver like 'MySQL' and/or 'SQLite', etc...
      * @param version the version of the database type or null if not specified.
      * @param url the jdbc url for the driver class or null if not required.
      * @throws IllegalArgumentException if driver class is not found or is not assignable from
-     *                                            {@link java.sql.Driver} or {@link javax.sql.DataSource}.
+     *                                  {@link java.sql.Driver} or {@link javax.sql.DataSource}.
      */
     public Driver(@NotNull final String clazz, @NotNull final String type,
                   @Nullable final String version, @Nullable final String url) {
@@ -71,9 +69,8 @@ public class Driver {
     }
 
     /**
-     * Returns the source class of this driver representation.<br>
+     * Returns the source class of this driver representation.
      * This class normally implements the {@link java.sql.Driver} or {@link javax.sql.DataSource} interface.
-     *
      * @return the source class of the driver.
      */
     public @NotNull Class<?> getSource() {
@@ -82,7 +79,6 @@ public class Driver {
 
     /**
      * Returns the database type that this driver representation is for.
-     *
      * @return the database type of the driver.
      */
     public @NotNull String getType() {
@@ -90,8 +86,7 @@ public class Driver {
     }
 
     /**
-     * Returns the database type version that this driver representation is for
-     *
+     * Returns the database type version that this driver representation is for.
      * @return the database type version of the driver.
      */
     public @Nullable String getVersion() {
@@ -99,9 +94,8 @@ public class Driver {
     }
 
     /**
-     * Returns the jdbc url of this driver representation.<br>
+     * Returns the jdbc url of this driver representation.
      * May be null if the source class specified by this driver implements {@link javax.sql.DataSource}.
-     *
      * @return the jdbc url for the driver class.
      */
     public @Nullable String getJdbcUrl() {
@@ -109,10 +103,9 @@ public class Driver {
     }
 
     /**
-     * Returns the properties for the driver class if it implements {@link javax.sql.DataSource}.<br>
+     * Returns the properties for the driver class if it implements {@link javax.sql.DataSource}.
      * This means that this may be null if the class implements {@link java.sql.Driver} instead of
      * {@link javax.sql.DataSource}.
-     *
      * @return the properties for the data source driver.
      */
     public @Nullable Properties getProperties() {
@@ -122,7 +115,6 @@ public class Driver {
     /**
      * Sets or removes the properties for the driver class that will be used if the driver class implements
      * {@link javax.sql.DataSource}.
-     *
      * @param properties the new properties for the data source driver or null.
      */
     public void setProperties(@Nullable final Properties properties) {

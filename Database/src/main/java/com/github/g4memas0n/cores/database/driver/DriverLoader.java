@@ -16,18 +16,16 @@ public abstract class DriverLoader {
     protected DriverLoader() { }
 
     /**
-     * Loads all drivers from the driver file regardless of the database type.<br>
+     * Loads all drivers from the driver file regardless of the database type.<
      * The array returned by this method may be empty if no driver could be loaded successfully.
-     *
      * @return an array containing all loaded drivers.
      */
     public abstract Driver[] loadAll();
 
     /**
-     * Loads all drivers from the driver file that matches the given database {@code type}.<br>
+     * Loads all drivers from the driver file that matches the given database {@code type}.
      * The array returned by this method may be empty if no matching driver has been found or no found driver could be
      * loaded successfully.
-     *
      * @param type the driver type that the drivers must match.
      * @return an array containing the all loaded drivers for the given database {@code type}.
      */

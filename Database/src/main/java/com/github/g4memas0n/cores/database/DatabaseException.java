@@ -3,26 +3,26 @@ package com.github.g4memas0n.cores.database;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * An exception that provides information on any database error that occurs.
+ * Exception thrown to indicate that a database error occurred.
  *
  * @since 1.0.0
  */
 public class DatabaseException extends Exception {
 
     /**
-     * Constructs a database exception with the given {@code reason}
-     * @param reason a description of the exception.
+     * Constructs an instance of DatabaseException with the specified message.
+     * @param message the detail message of the exception.
      */
-    public DatabaseException(@NotNull final String reason) {
-        super(reason);
+    public DatabaseException(@NotNull final String message) {
+        super(message);
     }
 
     /**
-     * Constructs a database exception with the given {@code reason} and {@code cause}.
-     * @param reason a description of the exception.
-     * @param cause the underlying reason for this {@code DatabaseException}.
+     * Constructs an instance of EconomyException with the specified message and cause.
+     * @param message the detail message of the exception.
+     * @param cause the cause of the exception
      */
-    public DatabaseException(@NotNull final String reason, @NotNull final Throwable cause) {
-        super(reason, cause);
+    public DatabaseException(@NotNull final String message, @NotNull final Throwable cause) {
+        super(message, cause);
     }
 }

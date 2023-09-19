@@ -11,7 +11,7 @@ public class QueryLoaderTest {
     @Test(expected = IllegalArgumentException.class)
     public void loadMissingOrUnsupportedTest() {
         try {
-            QueryLoader.getLoader("missing");
+            QueryLoader.getLoader(PropertyQueryLoader.class, "missing");
         } catch (IOException ex) {
             Assert.fail(ex.toString());
         }
@@ -27,7 +27,7 @@ public class QueryLoaderTest {
         Mockito.when(driver.getVersion()).thenReturn("1");
 
         try {
-            loader = QueryLoader.getLoader("database/queries", driver);
+            loader = QueryLoader.getLoader(PropertyQueryLoader.class, "database/queries", driver);
         } catch (IOException ex) {
             Assert.fail(ex.toString());
         }
