@@ -39,6 +39,7 @@ public abstract class DatabaseManager {
      * If the source class returned by the given driver implements the {@link java.sql.Driver} interface, the driver
      * must specify a valid jdbc url.
      * @param driver the database driver to use for the data source.
+     * @throws IllegalArgumentException if the driver fails to load.
      * @throws DatabaseException if the connection to the data source fails.
      * @see #connect(Driver, Properties)
      */
@@ -48,14 +49,14 @@ public abstract class DatabaseManager {
 
         if (java.sql.Driver.class.isAssignableFrom(driver.getSource())) {
             if (driver.getJdbcUrl() == null) {
-                throw new IllegalArgumentException("driver is missing jdbc-url");
+                throw new IllegalArgumentException("missing jdbc-url");
             }
 
             try {
                 config.setDriverClassName(driver.getSource().getName());
                 config.setJdbcUrl(driver.getJdbcUrl());
             } catch (RuntimeException ex) {
-                throw new DatabaseException("failed to load driver", ex);
+                throw new IllegalArgumentException("illegal driver source", ex);
             }
         } else {
             config.setDataSourceClassName(driver.getSource().getName());
@@ -71,6 +72,7 @@ public abstract class DatabaseManager {
      * replaces them with the corresponding values.
      * @param driver the database driver to use for the data source.
      * @param properties the properties for the data source, which will be used as placeholders.
+     * @throws IllegalArgumentException if the driver fails to load.
      * @throws DatabaseException if the connection to the data source fails.
      * @see #connect(Driver)
      */
@@ -83,7 +85,7 @@ public abstract class DatabaseManager {
             String placeholder;
 
             if (jdbc == null) {
-                throw new IllegalArgumentException("driver is missing jdbc-url");
+                throw new IllegalArgumentException("missing jdbc-url");
             }
 
             for (Map.Entry<Object, Object> entry : properties.entrySet()) {
@@ -96,7 +98,7 @@ public abstract class DatabaseManager {
                 config.setDriverClassName(driver.getSource().getName());
                 config.setJdbcUrl(jdbc);
             } catch (RuntimeException ex) {
-                throw new DatabaseException("failed to load driver", ex);
+                throw new IllegalArgumentException("illegal driver source", ex);
             }
         } else {
             if (driver.getProperties() != null) {
