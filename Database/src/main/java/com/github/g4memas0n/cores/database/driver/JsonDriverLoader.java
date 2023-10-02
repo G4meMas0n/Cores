@@ -43,22 +43,38 @@ public class JsonDriverLoader extends DriverLoader {
     private final JsonArray root;
 
     /**
+     * Creates a new json driver loader from a file at the specified path.
+     * This constructor reads the json file in UTF-8 by default.
+     * @param path the path to load the file from.
+     * @throws IllegalArgumentException if the file cannot be found or contains malformed Unicode escape sequences.
+     * @throws IOException if the file cannot be read.
+     */
+    public JsonDriverLoader(@NotNull final String path) throws IOException {
+        try (InputStream stream = getClass().getClassLoader().getResourceAsStream(path + ".json")) {
+            if (stream == null) {
+                throw new IllegalArgumentException("file not found");
+            }
+
+            Reader reader = new InputStreamReader(stream, StandardCharsets.UTF_8);
+            this.root = new GsonBuilder().create().fromJson(reader, JsonArray.class);
+        } catch (JsonSyntaxException ex) {
+            throw new IllegalArgumentException("file must begin with an array", ex);
+        } catch (JsonIOException ex) {
+            throw new IOException(ex);
+        }
+    }
+
+    /**
      * Creates a new json driver loader from a {@link Reader}.
      * Unlike the constructor {@link #JsonDriverLoader(InputStream)}, there is no limitation as to the encoding of
      * the input json file.
-     * @param reader a reader that represents a json file to read from.
+     * @param reader a reader to read from.
      * @throws IllegalArgumentException if a malformed Unicode escape sequence appears from reader.
      * @throws IOException if an I/O error occurs.
      */
     public JsonDriverLoader(@NotNull final Reader reader) throws IOException {
         try {
             this.root = new GsonBuilder().create().fromJson(reader, JsonArray.class);
-
-            for (JsonElement element : this.root) {
-                if (!element.isJsonObject()) {
-                    throw new IllegalArgumentException("file contains illegal elements");
-                }
-            }
         } catch (JsonSyntaxException ex) {
             throw new IllegalArgumentException("file must begin with an array", ex);
         } catch (JsonIOException ex) {
@@ -70,7 +86,7 @@ public class JsonDriverLoader extends DriverLoader {
      * Creates a new json driver loader from an {@link InputStream}.
      * This constructor reads the json file in UTF-8 by default. If any other charset is other, the constructor
      * {@link #JsonDriverLoader(Reader)} may be used.
-     * @param stream an InputStream that represents a json file to read from.
+     * @param stream an InputStream to read from.
      * @throws IllegalArgumentException if stream contains a malformed Unicode escape sequence.
      * @throws IOException if an I/O error occurs.
      */
@@ -86,7 +102,7 @@ public class JsonDriverLoader extends DriverLoader {
         while (iterator.hasNext()) {
             try {
                 drivers.add(load(iterator.next().getAsJsonObject()));
-            } catch (IllegalArgumentException ignored) {
+            } catch (IllegalArgumentException | IllegalStateException ignored) {
 
             }
         }
@@ -108,7 +124,7 @@ public class JsonDriverLoader extends DriverLoader {
                     if (entry.get("type").getAsString().equalsIgnoreCase(type)) {
                         drivers.add(load(entry));
                     }
-                } catch (IllegalArgumentException ignored) {
+                } catch (IllegalArgumentException | IllegalStateException ignored) {
 
                 }
             }

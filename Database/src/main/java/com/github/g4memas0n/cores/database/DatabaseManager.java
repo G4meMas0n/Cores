@@ -160,8 +160,7 @@ public abstract class DatabaseManager {
     public final void disconnect() {
         if (this.source != null && !this.source.isClosed()) {
             this.source.close();
-
-            getLogger().info("Closed connection to database.");
+            getLogger().info("Closed connection to data source.");
         }
 
         this.source = null;
@@ -266,7 +265,7 @@ public abstract class DatabaseManager {
                 closeable.rollback();
             }
         } catch (SQLException ex) {
-            getLogger().log(Level.SEVERE, "Could not close database connection", ex);
+            getLogger().log(Level.SEVERE, "Failed to close database connection", ex);
         }
     }
 }
