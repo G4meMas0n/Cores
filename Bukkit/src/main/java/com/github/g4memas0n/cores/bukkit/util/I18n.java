@@ -1,5 +1,6 @@
 package com.github.g4memas0n.cores.bukkit.util;
 
+import com.google.common.base.Preconditions;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -14,6 +15,7 @@ import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.ResourceBundle.Control;
+import java.util.logging.Level;
 
 public final class I18n {
 
@@ -25,10 +27,6 @@ public final class I18n {
     private ResourceBundle customBundle;
     private ResourceBundle localBundle;
 
-    public I18n(@NotNull final Plugin plugin) {
-        this(plugin, "resources/messages");
-    }
-
     public I18n(@NotNull final Plugin plugin, @NotNull final String bundle) {
         this.plugin = plugin;
         this.classLoader = new CustomFileClassLoader(plugin.getClass().getClassLoader(), plugin.getDataFolder());
@@ -38,30 +36,23 @@ public final class I18n {
     }
 
     public void load(@NotNull final Locale locale) {
-        ResourceBundle.clearCache(this.classLoader);
+        this.plugin.getLogger().info("Loading resource bundle for locale: " + locale);
 
         try {
             this.localBundle = ResourceBundle.getBundle(this.defaultBundle.getBaseBundleName(), locale);
 
-            if (this.localBundle.getLocale().equals(locale)) {
-                this.plugin.getLogger().info("Loaded resource bundle for locale " + locale);
-            } else {
-                this.plugin.getLogger().warning("Unable to find resource bundle for locale " + locale
-                        + ": Using fallback locale " + this.localBundle.getLocale());
+            if (!this.localBundle.getLocale().equals(locale)) {
+                this.plugin.getLogger().warning("Resource bundle for locale " + locale
+                        + " could not be found. Using fallback locale: " + this.localBundle.getLocale());
             }
         } catch (MissingResourceException ex) {
-            this.plugin.getLogger().warning("Unable to find resource bundle: Using default resource bundle");
+            this.plugin.getLogger().log(Level.WARNING, "Failed to find resource bundle! Using default resource bundle.", ex);
         }
 
         try {
-            this.customBundle = ResourceBundle.getBundle(this.defaultBundle.getBaseBundleName(), locale, this.classLoader,
-                    Control.getNoFallbackControl(Control.FORMAT_PROPERTIES));
-
-            if (this.customBundle.getLocale().equals(locale)) {
-                this.plugin.getLogger().info("Detected and loaded custom resource bundle for locale " + locale);
-            } else {
-                this.customBundle = null;
-            }
+            this.customBundle = ResourceBundle.getBundle(this.defaultBundle.getBaseBundleName(), locale,
+                    this.classLoader, Control.getNoFallbackControl(Control.FORMAT_PROPERTIES));
+            this.plugin.getLogger().info("Found custom resource bundle for locale: " + locale);
         } catch (MissingResourceException ignored) {
 
         }
@@ -72,6 +63,8 @@ public final class I18n {
     }
 
     public void unload() {
+        ResourceBundle.clearCache(this.classLoader);
+
         this.localBundle = this.defaultBundle;
         this.customBundle = null;
 
@@ -94,7 +87,7 @@ public final class I18n {
         try {
             return this.localBundle.getString(key);
         } catch (MissingResourceException ex) {
-            this.plugin.getLogger().warning("Missing key '" + key + "' in resource bundle for locale "
+            this.plugin.getLogger().warning("Missing key '" + key + "' in resource bundle for locale: "
                     + this.localBundle.getLocale());
         }
 
@@ -105,11 +98,17 @@ public final class I18n {
         final String format = translate(key);
 
         if (arguments.length > 0) {
+            for (int index = 0; index < arguments.length; index++) {
+                if (arguments[index] instanceof Enum<?>) {
+                    Enum<?> value = (Enum<?>) arguments[index];
+                    arguments[index] = value.name().charAt(0) + value.name().substring(1).toLowerCase();
+                }
+            }
+
             try {
                 return MessageFormat.format(format, arguments);
             } catch (IllegalArgumentException ex) {
-                this.plugin.getLogger().warning("Invalid format of key '" + key + "': " + ex.getMessage());
-
+                this.plugin.getLogger().log(Level.WARNING, "Illegal message format for key: " + key, ex);
                 try {
                     return MessageFormat.format(format.replaceAll("\\{(\\D*?)}", "\\[$1\\]"), arguments);
                 } catch (IllegalArgumentException ignored) {
@@ -126,20 +125,8 @@ public final class I18n {
     }
 
     public static @NotNull String tl(@NotNull final String key, @NotNull final Object... arguments) {
-        if (instance == null) {
-            throw new IllegalStateException("Translations are not available");
-        }
-
+        Preconditions.checkState(instance != null, "localization unavailable");
         return instance.format(key, arguments);
-    }
-
-    public static @NotNull String tlEnum(@NotNull final String key, @NotNull final Enum<?> element) {
-        return tl(key, element.name().charAt(0) + element.name().substring(1).toLowerCase());
-    }
-
-    public static @NotNull String tlPrefix(@NotNull final String prefix, @NotNull final String key,
-                                           @NotNull final Object... arguments) {
-        return tl(prefix) + " " + tl(key, arguments);
     }
 
     public static boolean has(@NotNull final String key) {
