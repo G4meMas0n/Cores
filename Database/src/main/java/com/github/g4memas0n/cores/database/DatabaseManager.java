@@ -5,12 +5,10 @@ import com.google.common.base.Preconditions;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -29,7 +27,6 @@ public abstract class DatabaseManager {
     protected static Logger logger = Logger.getLogger(DatabaseManager.class.getName());
 
     private volatile HikariDataSource source;
-    private volatile HikariConfig config;
     private volatile Driver driver;
 
     /**
@@ -37,93 +34,57 @@ public abstract class DatabaseManager {
      */
     public DatabaseManager() { }
 
-    /*
-     * Methods for establishing database connections:
-     */
-
     /**
-     * Loads the data source using the given driver.
+     * Connects to a data source using the given driver.
      * If the source class returned by the given driver implements the {@link java.sql.Driver} interface, the driver
      * must specify a valid jdbc url.
-     * @param driver a database driver to load.
-     * @throws IllegalArgumentException if the given driver is missing a jdbc-url.
-     * @throws IllegalStateException if a database connection is already established.
-     * @throws DatabaseException if the data source failed to load.
+     * @param driver the database driver to use for the data source.
+     * @throws DatabaseException if the connection to the data source fails.
+     * @see #connect(Driver, Properties)
      */
-    public final void load(@NotNull final Driver driver) throws DatabaseException {
+    public final void connect(@NotNull final Driver driver) throws DatabaseException {
+        Preconditions.checkState(this.source == null, "connection already established");
+        HikariConfig config = driver.getProperties() != null ? new HikariConfig(driver.getProperties()) : new HikariConfig();
+
+        if (java.sql.Driver.class.isAssignableFrom(driver.getSource())) {
+            if (driver.getJdbcUrl() == null) {
+                throw new IllegalArgumentException("driver is missing jdbc-url");
+            }
+
+            try {
+                config.setDriverClassName(driver.getSource().getName());
+                config.setJdbcUrl(driver.getJdbcUrl());
+            } catch (RuntimeException ex) {
+                throw new DatabaseException("failed to load driver", ex);
+            }
+        } else {
+            config.setDataSourceClassName(driver.getSource().getName());
+        }
+
+        config.setAutoCommit(true);
+        connect(driver, config);
+    }
+
+    /**
+     * Connects to a data source using the given driver and properties.
+     * This method will check for all occurrences of the property keys in the driver's data source properties and
+     * replaces them with the corresponding values.
+     * @param driver the database driver to use for the data source.
+     * @param properties the properties for the data source, which will be used as placeholders.
+     * @throws DatabaseException if the connection to the data source fails.
+     * @see #connect(Driver)
+     */
+    public final void connect(@NotNull final Driver driver, @NotNull final Properties properties) throws DatabaseException {
         Preconditions.checkState(this.source == null, "connection already established");
         HikariConfig config = new HikariConfig();
 
-        try {
-            if (java.sql.Driver.class.isAssignableFrom(driver.getSource())) {
-                if (driver.getJdbcUrl() == null) {
-                    throw new IllegalArgumentException("driver is missing jdbc-url");
-                }
-
-                config.setDriverClassName(driver.getSource().getName());
-                config.setAutoCommit(true);
-            } else {
-                config.setDataSourceClassName(driver.getSource().getName());
-                config.setAutoCommit(true);
-            }
-
-            // Driver have been loaded successfully.
-            this.config = config;
-            this.driver = driver;
-        } catch (RuntimeException ex) {
-            throw new DatabaseException("failed to load driver", ex);
-        }
-    }
-
-    /**
-     * Connects to a data source, expecting that all required settings are already set.
-     * If the connection to the data source has established successfully, the {@link #initialize(Connection)} method
-     * will be automatically called to initialize the data source.
-     * @throws DatabaseException if the connection or initialization fails.
-     * @see #connect(Properties)
-     */
-    public final void connect() throws DatabaseException {
-        Preconditions.checkState(this.source == null, "connection already established");
-        Preconditions.checkState(this.config != null, "missing database driver");
-        HikariDataSource source;
-
-        try {
-            getLogger().info("Setting up data source...");
-            source = new HikariDataSource(this.config);
-        } catch (RuntimeException ex) {
-            getLogger().log(Level.WARNING, "Failed to setup data source", ex);
-            throw new DatabaseException("data source setup failed");
-        }
-
-        getLogger().info("Trying to establish connection...");
-        try (Connection connection = source.getConnection()) {
-            getLogger().info("Successfully established connection. Initializing database...");
-            initialize(connection);
-            getLogger().info("Successfully initialized database.");
-
-            this.source = source;
-        } catch (SQLException ex) {
-            getLogger().log(Level.WARNING, "Failed to establish connection or initialize data source", ex);
-            disconnect();
-            throw new DatabaseException("connection or initialization failed");
-        }
-    }
-
-    /**
-     * Connects to a data source using the given connection properties.
-     * This method will check for all occurrences of the property keys in the data source properties and replaces them
-     * with the corresponding values.
-     * @param properties properties for replacing placeholders.
-     * @throws DatabaseException if the connection or initialization fails.
-     * @see #connect()
-     */
-    public final void connect(@NotNull final Properties properties) throws DatabaseException {
-        Preconditions.checkState(this.source == null, "connection already established");
-        Preconditions.checkState(this.driver != null, "missing database driver");
-
-        if (java.sql.Driver.class.isAssignableFrom(this.driver.getSource())) {
-            String jdbc = Objects.requireNonNull(this.driver.getJdbcUrl());
+        if (java.sql.Driver.class.isAssignableFrom(driver.getSource())) {
+            String jdbc = driver.getJdbcUrl();
             String placeholder;
+
+            if (jdbc == null) {
+                throw new IllegalArgumentException("driver is missing jdbc-url");
+            }
 
             for (Map.Entry<Object, Object> entry : properties.entrySet()) {
                 if (jdbc.contains(placeholder = "{" + entry.getKey() + "}")) {
@@ -131,26 +92,65 @@ public abstract class DatabaseManager {
                 }
             }
 
-            this.config.setJdbcUrl(jdbc);
-        } else if (javax.sql.DataSource.class.isAssignableFrom(this.driver.getSource())) {
-            String placeholder, value;
-
-            for (Map.Entry<Object, Object> property : Objects.requireNonNull(this.driver.getProperties()).entrySet()) {
-                value = property.getValue().toString();
-
-                for (Map.Entry<Object, Object> entry : properties.entrySet()) {
-                    if (value.contains(placeholder = "{" + entry.getKey() + "}")) {
-                        value = value.replace(placeholder, entry.getValue().toString());
-                    }
-                }
-
-                this.config.addDataSourceProperty(property.getKey().toString(), value);
+            try {
+                config.setDriverClassName(driver.getSource().getName());
+                config.setJdbcUrl(jdbc);
+            } catch (RuntimeException ex) {
+                throw new DatabaseException("failed to load driver", ex);
             }
+        } else {
+            if (driver.getProperties() != null) {
+                String placeholder, value;
+
+                for (Map.Entry<Object, Object> property : driver.getProperties().entrySet()) {
+                    value = property.getValue().toString();
+
+                    for (Map.Entry<Object, Object> entry : properties.entrySet()) {
+                        if (value.contains(placeholder = "{" + entry.getKey() + "}")) {
+                            value = value.replace(placeholder, entry.getValue().toString());
+                        }
+                    }
+
+                    config.addDataSourceProperty(property.getKey().toString(), value);
+                }
+            }
+
+            config.setDataSourceClassName(driver.getSource().getName());
         }
 
-        this.config.setUsername(properties.getProperty("username"));
-        this.config.setPassword(properties.getProperty("password"));
-        this.connect();
+        config.setUsername(properties.getProperty("username"));
+        config.setPassword(properties.getProperty("password"));
+        config.setAutoCommit(true);
+        connect(driver, config);
+    }
+
+    private void connect(@NotNull final Driver driver, @NotNull final HikariConfig config) throws DatabaseException {
+        HikariDataSource source;
+
+        try {
+            getLogger().info("Setting up data source...");
+            source = new HikariDataSource(config);
+        } catch (RuntimeException ex) {
+            getLogger().log(Level.SEVERE, "Failed to setup data source", ex);
+            throw new DatabaseException("data source setup failed", ex);
+        }
+
+        getLogger().info("Trying to establish connection...");
+        try (Connection connection = source.getConnection()) {
+            this.driver = driver;
+
+            getLogger().info("Successfully established connection. Initializing database...");
+            initialize(connection);
+            getLogger().info("Successfully initialized database.");
+        } catch (SQLException ex) {
+            this.driver = null;
+
+            source.close();
+            getLogger().log(Level.SEVERE, "Failed to establish connection", ex);
+            throw new DatabaseException("connection or initialization failed");
+        }
+
+        this.source = source;
     }
 
     /**
@@ -159,36 +159,43 @@ public abstract class DatabaseManager {
      */
     public final void disconnect() {
         if (this.source != null && !this.source.isClosed()) {
+            getLogger().info("Shutting down data source...");
             this.source.close();
-            getLogger().info("Closed connection to data source.");
+            getLogger().info("Successfully shut down data source.");
         }
 
         this.source = null;
+        this.driver = null;
+    }
+
+    /**
+     * Returns whether a connection to a data source is established.
+     * @return true if a connection is established, false otherwise.
+     */
+    public final boolean isConnected() {
+        return this.source != null && this.source.isRunning();
+    }
+
+    /**
+     * Returns whether a connection to a data source is established.
+     * @return true if no connection is established, false otherwise.
+     */
+    public final boolean isDisconnected() {
+        return this.source == null || this.source.isClosed();
     }
 
     /*
-     * Protected methods:
+     *
      */
 
     /**
-     * Returns the loaded data source driver if already set.
-     * @return the loaded data source driver.
+     * Returns the data source driver that was used to connect to the data source.
+     * @return the data source driver.
      */
-    protected @Nullable Driver driver() {
+    public final @NotNull Driver driver() {
+        Preconditions.checkState(this.driver != null, "driver not available");
         return this.driver;
     }
-
-    /**
-     * Initializes the connected database.
-     * This method will automatically be called after a connection to the data source has been established.
-     * @param connection an active connection from the connected data source.
-     * @throws SQLException if the initialization fails.
-     */
-    protected abstract void initialize(@NotNull final Connection connection) throws SQLException;
-
-    /*
-     * Methods for handling database connections:
-     */
 
     /**
      * Fetches or opens a connection to the database by calling the appropriate method on connected data source.
@@ -227,7 +234,19 @@ public abstract class DatabaseManager {
     }
 
     /*
-     * Static methods:
+     *
+     */
+
+    /**
+     * Initializes the connected database.
+     * This method will automatically be called after a connection to the data source has been established.
+     * @param connection an active connection from the connected data source.
+     * @throws SQLException if the initialization fails.
+     */
+    protected abstract void initialize(@NotNull final Connection connection) throws SQLException;
+
+    /*
+     *
      */
 
     /**
@@ -236,10 +255,7 @@ public abstract class DatabaseManager {
      * @throws IllegalStateException if the logger for this class is not set.
      */
     public static @NotNull Logger getLogger() {
-        if (logger == null) {
-            throw new IllegalStateException("logger is not available");
-        }
-
+        Preconditions.checkState(logger != null, "logger not available");
         return logger;
     }
 
