@@ -5,8 +5,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <name>Core</name>
-    <groupId>com.github.g4memas0n</groupId>
-    <artifactId>cores-project</artifactId>
+    <groupId>de.g4memas0n</groupId>
+    <artifactId>core-project</artifactId>
     <packaging>pom</packaging>
     <version>parent</version>
     <modules>
@@ -22,7 +22,7 @@
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
-            <version>23.0.0</version>
+            <version>24.0.1</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -34,7 +34,7 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>4.8.0</version>
+            <version>5.2.0</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -44,7 +44,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
+                <version>3.11.0</version>
                 <configuration>
                     <encoding>UTF-8</encoding>
                     <source>${java.version}</source>
