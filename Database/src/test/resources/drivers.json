@@ -1,0 +1,20 @@
+[
+    {
+        "class": "com.mysql.cj.jdbc.Driver",
+        "jdbcUrl": "jdbc:mysql://{host}:{port}/{database}",
+        "vendor": {
+            "name": "MySQL",
+            "version": 8
+        }
+    },
+    {
+        "class": "org.sqlite.SQLiteDataSource",
+        "properties": {
+            "encoding": "UTF-8",
+            "url": "jdbc:sqlite:{path}/sample.db"
+        },
+        "vendor": {
+            "name": "SQLite"
+        }
+    }
+]
