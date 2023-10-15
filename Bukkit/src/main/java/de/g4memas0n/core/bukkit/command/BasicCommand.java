@@ -1,4 +1,4 @@
-package com.github.g4memas0n.cores.bukkit.command;
+package de.g4memas0n.core.bukkit.command;
 
 import com.google.common.base.Preconditions;
 import org.bukkit.command.Command;
@@ -20,10 +20,19 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * An abstract command class to extend for registering to bukkit.
+ * @param <T> the main class of the plugin.
+ */
 public abstract class BasicCommand<T extends JavaPlugin> extends SubCommand<T> implements TabExecutor {
 
     private Map<String, SubCommand<T>> commands;
 
+    /**
+     * Constructs a new command with the given name and permission.
+     * @param name the name of the command.
+     * @param permission the permission for the command or null.
+     */
     public BasicCommand(@NotNull final String name, @Nullable final String permission) {
         super(name, permission);
     }
@@ -87,6 +96,11 @@ public abstract class BasicCommand<T extends JavaPlugin> extends SubCommand<T> i
         return false;
     }
 
+    /**
+     * Registers a subcommand to an implementing bukkit command.
+     * @param command the subcommand to register.
+     * @return true if it has been registered, false otherwise.
+     */
     public boolean register(@NotNull final SubCommand<T> command) {
         Preconditions.checkState(this.plugin == null);
         if (this.commands == null) {
@@ -96,6 +110,11 @@ public abstract class BasicCommand<T extends JavaPlugin> extends SubCommand<T> i
         return this.commands.putIfAbsent(command.getName(), command) == null;
     }
 
+    /**
+     * Unregisters a subcommand from an implementing bukkit command.
+     * @param command the subcommand to unregister.
+     * @return true if it has been unregistered, false otherwise.
+     */
     public boolean unregister(@NotNull final SubCommand<T> command) {
         Preconditions.checkState(this.plugin == null);
         if (this.commands != null && this.commands.remove(command.getName(), command)) {
@@ -108,6 +127,14 @@ public abstract class BasicCommand<T extends JavaPlugin> extends SubCommand<T> i
         return false;
     }
 
+    /**
+     * Returns the description of the command.
+     * <p>
+     * If the set description does not match the description of the given bukkit command, the description of it will
+     * be updated.
+     * @param command the corresponding bukkit command or null
+     * @return the command description or null.
+     */
     public @Nullable String getDescription(@Nullable final Command command) {
         String description = super.getDescription();
 
@@ -123,6 +150,13 @@ public abstract class BasicCommand<T extends JavaPlugin> extends SubCommand<T> i
         return this.plugin != null ? getDescription(this.plugin.getCommand(this.name)) : super.getDescription();
     }
 
+    /**
+     * Returns the usage of the command.
+     * <p>
+     * If the set usage does not match the usage of the given bukkit command, the usage of it will be updated.
+     * @param command the corresponding bukkit command or null
+     * @return the command usage or null.
+     */
     public @Nullable String getUsage(@Nullable final Command command) {
         String usage = super.getUsage();
 

@@ -1,4 +1,4 @@
-package com.github.g4memas0n.cores.bukkit.util;
+package de.g4memas0n.core.bukkit.util;
 
 import com.google.common.base.Preconditions;
 import org.bukkit.plugin.Plugin;
@@ -17,6 +17,9 @@ import java.util.ResourceBundle;
 import java.util.ResourceBundle.Control;
 import java.util.logging.Level;
 
+/**
+ * A class providing access to translated messages.
+ */
 public final class I18n {
 
     private static I18n instance;
@@ -27,6 +30,11 @@ public final class I18n {
     private ResourceBundle customBundle;
     private ResourceBundle localBundle;
 
+    /**
+     * Constructs a new translation class with the given plugin and bundle basename.
+     * @param plugin the plugin to which the class belongs to.
+     * @param bundle the basename of the resource bundle.
+     */
     public I18n(@NotNull final Plugin plugin, @NotNull final String bundle) {
         this.plugin = plugin;
         this.classLoader = new CustomFileClassLoader(plugin.getClass().getClassLoader(), plugin.getDataFolder());
@@ -35,6 +43,10 @@ public final class I18n {
         this.customBundle = null;
     }
 
+    /**
+     * Loads the resource bundles for the given locale.
+     * @param locale the new bundle locale.
+     */
     public void load(@NotNull final Locale locale) {
         this.plugin.getLogger().info("Loading resource bundle for locale: " + locale);
 
@@ -62,6 +74,9 @@ public final class I18n {
         instance = this;
     }
 
+    /**
+     * Unloads the resource bundles for the current locale.
+     */
     public void unload() {
         ResourceBundle.clearCache(this.classLoader);
 
@@ -71,10 +86,19 @@ public final class I18n {
         instance = null;
     }
 
+    /**
+     * Returns the current locale of the loaded resource bundles.
+     * @return the current bundle locale.
+     */
     public @NotNull Locale locale() {
         return this.customBundle != null ? this.customBundle.getLocale() : this.localBundle.getLocale();
     }
 
+    /**
+     * Translates the message for the given key into the currently loaded locale.
+     * @param key the key of the message to translate.
+     * @return the translated message.
+     */
     public @NotNull String translate(@NotNull final String key) {
         if (this.customBundle != null) {
             try {
@@ -94,6 +118,13 @@ public final class I18n {
         return this.defaultBundle.getString(key);
     }
 
+    /**
+     * Translates the message for the given key into the currently loaded locale and formats it with the given
+     * arguments.
+     * @param key the key of the message to translate.
+     * @param arguments the arguments to use for formatting.
+     * @return the translated and formatted message.
+     */
     public @NotNull String format(@NotNull final String key, @NotNull final Object... arguments) {
         final String format = translate(key);
 
@@ -120,15 +151,34 @@ public final class I18n {
         return format;
     }
 
+    /**
+     * Checks whether the translation class has a message associated with the given key.
+     * @param key the key of the message to check.
+     * @return true if it has a message for the key, false otherwise.
+     */
     public boolean contains(@NotNull final String key) {
         return this.defaultBundle.containsKey(key);
     }
 
+    /**
+     * Translated the message for the given key using the last loaded translation class and format it with the given
+     * arguments.
+     * @param key key the key of the message to translate.
+     * @param arguments the arguments to use for formatting.
+     * @return the translated and formatted message.
+     * @see #format(String, Object...)
+     */
     public static @NotNull String tl(@NotNull final String key, @NotNull final Object... arguments) {
         Preconditions.checkState(instance != null, "localization unavailable");
         return instance.format(key, arguments);
     }
 
+    /**
+     * Checks whether the last loaded translation class has a message associated with the given key.
+     * @param key the key of the message to check.
+     * @return true if it has a message for the key, false otherwise.
+     * @see #contains(String)
+     */
     public static boolean has(@NotNull final String key) {
         return instance != null && instance.contains(key);
     }

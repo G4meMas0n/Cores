@@ -1,6 +1,6 @@
-package com.github.g4memas0n.cores.bukkit.command;
+package de.g4memas0n.core.bukkit.command;
 
-import com.github.g4memas0n.cores.bukkit.util.I18n;
+import de.g4memas0n.core.bukkit.util.I18n;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -10,21 +10,38 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
+/**
+ * An abstract subcommand class to extend.
+ * @param <T> the main class of the plugin.
+ */
 public abstract class SubCommand<T extends JavaPlugin> {
 
     protected final String name;
     protected final String permission;
 
+    /**
+     * The reference to the plugin main class instance.
+     */
     protected T plugin;
 
     private String description;
     private String usage;
 
+    /**
+     * Constructs a new subcommand with the given name and permission.
+     * @param name the name of the subcommand.
+     * @param permission the permission for the subcommand or null.
+     */
     public SubCommand(@NotNull final String name, @Nullable final String permission) {
         this.name = name.toLowerCase(Locale.ROOT);
         this.permission = permission;
     }
 
+    /**
+     * Registers the implementing subcommand.
+     * @param plugin the instance to the plugin main class.
+     * @return true if it has been registered, false otherwise.
+     */
     public boolean register(@NotNull final T plugin) {
         if (this.plugin == null) {
             this.plugin = plugin;
@@ -34,6 +51,11 @@ public abstract class SubCommand<T extends JavaPlugin> {
         return false;
     }
 
+    /**
+     * Unregisters the implementing subcommand.
+     * @param plugin the instance to the plugin main class.
+     * @return true if it has been unregistered, false otherwise.
+     */
     public boolean unregister(@NotNull final T plugin) {
         if (this.plugin == plugin) {
             this.plugin = null;
@@ -43,10 +65,21 @@ public abstract class SubCommand<T extends JavaPlugin> {
         return false;
     }
 
+    /**
+     * Returns the name of the subcommand.
+     * @return the command name.
+     */
     public final @NotNull String getName() {
         return this.name;
     }
 
+    /**
+     * Returns the description of the subcommand.
+     * <p>
+     * If the set description matches a key in the {@link de.g4memas0n.core.bukkit.util.I18n translation class}, it will be translated. Otherwise, it
+     * will be returned immediately.
+     * @return the command description or null.
+     */
     public @Nullable String getDescription() {
         if (this.description != null) {
             return I18n.has(this.description) ? I18n.tl(this.description) : this.description;
@@ -55,14 +88,29 @@ public abstract class SubCommand<T extends JavaPlugin> {
         return null;
     }
 
+    /**
+     * Checks whether a description was set for the subcommand.
+     * @return true if a description was set, false otherwise.
+     */
     public boolean hasDescription() {
         return this.description != null;
     }
 
+    /**
+     * Sets the description for the subcommand.
+     * @param description the new description or null.
+     */
     public void setDescription(@Nullable final String description) {
         this.description = description;
     }
 
+    /**
+     * Returns the usage of the subcommand.
+     * <p>
+     * If the set usage matches a key in the {@link I18n translation class}, it will be translated. Otherwise, it
+     * will be returned immediately.
+     * @return the command usage or null.
+     */
     public @Nullable String getUsage() {
         if (this.usage != null) {
             return I18n.has(this.usage) ? I18n.tl(this.usage) : this.usage;
@@ -71,10 +119,18 @@ public abstract class SubCommand<T extends JavaPlugin> {
         return null;
     }
 
+    /**
+     * Checks whether a usage was set for the subcommand.
+     * @return true if a usage was set, false otherwise.
+     */
     public boolean hasUsage() {
         return this.usage != null;
     }
 
+    /**
+     * Sets the usage for the subcommand.
+     * @param usage the new usage or null.
+     */
     public void setUsage(@Nullable final String usage) {
         this.usage = usage;
     }

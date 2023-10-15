@@ -1,4 +1,4 @@
-package com.github.g4memas0n.cores.bukkit.config;
+package de.g4memas0n.core.bukkit.config;
 
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -12,20 +12,36 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.util.logging.Level;
 
+/**
+ * An extended class for the bukkit configuration.
+ */
 public class Configuration extends YamlConfiguration {
 
     protected final Plugin plugin;
     protected final File config;
 
+    /**
+     * Constructs a new Configuration for the given plugin instance and configuration filename.
+     * @param plugin the instance to the plugin main class.
+     * @param file the name of the configuration file.
+     */
     public Configuration(@NotNull final Plugin plugin, @NotNull final String file) {
         this(plugin, new File(plugin.getDataFolder(), file));
     }
 
+    /**
+     * Constructs a new Configuration for the given plugin instance and configuration file.
+     * @param plugin the instance to the plugin main class.
+     * @param config the configuration file.
+     */
     public Configuration(@NotNull final Plugin plugin, @NotNull final File config) {
         this.plugin = plugin;
         this.config = config;
     }
 
+    /**
+     * Deletes the config file of the configuration.
+     */
     public void delete() {
         if (!this.config.exists()) {
             this.plugin.getLogger().log(Level.WARNING, "Config file " + this.config + " could not be found.");
@@ -39,6 +55,12 @@ public class Configuration extends YamlConfiguration {
         }
     }
 
+    /**
+     * Loads the config file of the configuration.
+     * <p>
+     * If the configuration file does not exist and the plugin jar contains a template, the configuration file will be
+     * created with the template.
+     */
     public void load() {
         try (InputStream stream = getClass().getClassLoader().getResourceAsStream(this.config.getPath())) {
             if (stream != null) {
@@ -73,6 +95,9 @@ public class Configuration extends YamlConfiguration {
         }
     }
 
+    /**
+     * Saves the config file of the configuration.
+     */
     public void save() {
         try {
             save(this.config);

@@ -1,4 +1,4 @@
-package com.github.g4memas0n.cores.bukkit.listener;
+package de.g4memas0n.core.bukkit.listener;
 
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
@@ -7,10 +7,22 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import java.lang.reflect.Method;
 
+/**
+ * An abstract listener class to extend for listening to bukkit events.
+ * @param <T> the main class of the plugin.
+ */
 public abstract class BasicListener<T extends JavaPlugin> implements Listener {
 
+    /**
+     * The reference to the plugin main class instance.
+     */
     protected T plugin;
 
+    /**
+     * Registers the implementing listener to bukkit.
+     * @param plugin the instance to the plugin main class.
+     * @return true if it has been registered, false otherwise.
+     */
     public boolean register(@NotNull final T plugin) {
         if (this.plugin == null) {
             this.plugin = plugin;
@@ -21,6 +33,11 @@ public abstract class BasicListener<T extends JavaPlugin> implements Listener {
         return false;
     }
 
+    /**
+     * Unregisters the implementing listener from bukkit.
+     * @param plugin the instance to the plugin main class.
+     * @return true if it has been unregistered, false otherwise.
+     */
     public boolean unregister(@NotNull final T plugin) {
         if (this.plugin == plugin) {
             HandlerList.unregisterAll(this);
