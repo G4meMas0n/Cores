@@ -53,9 +53,9 @@ public class HikariDriverConnector extends HikariConnector {
 
         try {
             clazz = driver.getDriverClass();
-        } catch (RuntimeException ex) {
+        } catch (ClassNotFoundException ex) {
             DatabaseManager.getLogger().log(Level.SEVERE, "driver class not found", ex);
-            throw ex;
+            throw new RuntimeException(ex);
         }
 
         if (settings != null) {
