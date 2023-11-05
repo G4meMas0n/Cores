@@ -1,6 +1,5 @@
 package de.g4memas0n.core.database.query;
 
-import de.g4memas0n.core.database.driver.Driver;
 import org.junit.Assert;
 import org.junit.Test;
 import java.io.IOException;
@@ -40,7 +39,7 @@ public class BatchReaderTest {
         List<String> batch;
 
         try {
-            batch = BatchReader.getBatch("batches/test", new Driver.Vendor("MySQL"));
+            batch = BatchReader.getBatch("batches/test", "MySQL");
         } catch (IOException ex) {
             Assert.fail(ex.toString());
             return;

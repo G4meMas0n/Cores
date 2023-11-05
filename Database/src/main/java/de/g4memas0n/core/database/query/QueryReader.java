@@ -1,6 +1,5 @@
 package de.g4memas0n.core.database.query;
 
-import de.g4memas0n.core.database.driver.Driver.Vendor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
@@ -56,43 +55,24 @@ public class QueryReader {
      * @throws IllegalArgumentException if the file is not visible to the class loader.
      * @throws IOException if an I/O error occurs.
      */
-    public static @NotNull Properties getQueries(@NotNull String basename, @NotNull Vendor vendor) throws IOException {
-        return getQueries(basename, vendor, null);
-    }
-
-    /**
-     * Reads the queries properties file for the given basename and vendor and with the given default properties.
-     * @param basename the basename of the queries file.
-     * @param vendor the vendor for which the queries file is desired.
-     * @param defaults the default properties or null.
-     * @return the properties containing read query statements.
-     * @throws IllegalArgumentException if the file is not visible to the class loader.
-     * @throws IOException if an I/O error occurs.
-     */
-    public static @NotNull Properties getQueries(@NotNull String basename, @NotNull Vendor vendor, @Nullable Properties defaults) throws IOException {
+    public static @NotNull Properties getQueries(@NotNull String basename, @NotNull String vendor) throws IOException {
         StringBuilder builder = new StringBuilder(basename);
         Properties temp, properties = null;
-        String name;
 
         do {
-            name = builder.toString();
-
             try {
-                temp = getQueries(name, properties != null ? properties : defaults);
+                temp = getQueries(builder.toString(), properties);
                 properties = temp;
             } catch (IllegalArgumentException ignored) {
 
             }
 
-            if (name.contains(vendor.getName())) {
-                if (vendor.hasVersion() && !name.contains(Integer.toString(vendor.getVersion()))) {
-                    builder.append("-").append(vendor.getVersion());
-                } else {
-                    builder.setLength(0);
-                }
-            } else {
-                builder.append("_").append(vendor.getName());
+            if (builder.indexOf("_") < 0) {
+                builder.append("_").append(vendor);
+                continue;
             }
+
+            builder.setLength(0);
         } while (builder.length() > 0);
 
         if (properties == null) {

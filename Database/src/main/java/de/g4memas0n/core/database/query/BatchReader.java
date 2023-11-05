@@ -1,6 +1,5 @@
 package de.g4memas0n.core.database.query;
 
-import de.g4memas0n.core.database.driver.Driver.Vendor;
 import org.jetbrains.annotations.NotNull;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -86,34 +85,24 @@ public class BatchReader {
      * @throws IllegalArgumentException if the file is not visible to the class loader.
      * @throws IOException if an I/O error occurs.
      */
-    public static @NotNull List<String> getBatch(@NotNull String basename, @NotNull Vendor vendor) throws IOException {
-        StringBuilder builder = new StringBuilder(basename).append("_").append(vendor.getName());
+    public static @NotNull List<String> getBatch(@NotNull String basename, @NotNull String vendor) throws IOException {
+        String name = basename + (!vendor.isBlank() ? "_" + vendor : "");
         int index;
-
-        if (vendor.hasVersion()) {
-            builder.append("-").append(vendor.getVersion());
-        }
 
         do {
             try {
-                return getBatch(builder.toString());
-            } catch (IllegalArgumentException ignored) {
-                // search for parent batch files
-                if (vendor.hasVersion()) {
-                    index = builder.indexOf(Integer.toString(vendor.getVersion()));
-
-                    if (index > 0) {
-                        builder.delete(index - 1, builder.length());
-                        continue;
-                    }
+                return getBatch(name);
+            } catch (IllegalArgumentException ex) {
+                // search for parent batch file
+                if ((index = name.lastIndexOf("_")) > 0) {
+                    name = name.substring(0, index - 1);
+                    continue;
                 }
 
-                index = builder.indexOf(vendor.getName());
-                builder.delete(Math.max(index - 1, 0), builder.length());
+                name = null;
             }
-        } while (builder.length() > 0);
+        } while (name != null);
 
-        // no batch could be found/loaded
-        throw new IllegalArgumentException("missing or unsupported files");
+        throw new IllegalArgumentException("files not found");
     }
 }

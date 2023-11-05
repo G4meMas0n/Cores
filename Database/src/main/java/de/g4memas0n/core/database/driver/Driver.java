@@ -1,12 +1,10 @@
 package de.g4memas0n.core.database.driver;
 
-import de.g4memas0n.core.database.DatabaseManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,12 +37,7 @@ public class Driver {
      */
     public @NotNull Class<?> getDriverClass() throws ClassNotFoundException {
         if (this.clazz == null) {
-            try {
-                return this.clazz = Class.forName(this.className);
-            } catch (ClassNotFoundException ex) {
-                DatabaseManager.getLogger().log(Level.SEVERE, "driver class not found", ex);
-                throw ex;
-            }
+            this.clazz = Class.forName(this.className);
         }
 
         return this.clazz;

@@ -1,6 +1,5 @@
 package de.g4memas0n.core.database.connector;
 
-import de.g4memas0n.core.database.DatabaseManager;
 import com.google.common.base.Preconditions;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -21,7 +20,14 @@ public abstract class HikariConnector implements Connector {
     private HikariDataSource source;
 
     /**
-     * A public constructor for the implementing hikari connector with a given custom configurator.
+     * The public default constructor for the implementing a hikari connector.
+     */
+    public HikariConnector() {
+        this(null);
+    }
+
+    /**
+     * The public constructor for the implementing a hikari connector with a given custom configurator.
      * @param consumer a custom hikari configurator or null.
      */
     public HikariConnector(@Nullable Consumer<HikariConfig> consumer) {
@@ -29,7 +35,24 @@ public abstract class HikariConnector implements Connector {
     }
 
     /**
-     * Initializes the hikari connector with the given connection settings.
+     * Configures the given hikari config.
+     * <p>
+     * This method will be called during the {@link #initialize(Class, String, java.util.Properties, String, String)}
+     * method and is intended to be overwritten by the implementing subclass to configure the hikari config.
+     * @param config the hikari config to configure.
+     */
+    public void configure(@NotNull HikariConfig config) {
+        /*
+         * Setting this results in no initial connection validation, which is not required as the #getConnection method
+         * should be called subsequently to set up the schema.
+         * Setting the initialization timeout to don't perform any
+         */
+        config.setInitializationFailTimeout(-1);
+        config.setAutoCommit(true);
+    }
+
+    /**
+     * Initializes the hikari connector with the given connection properties.
      * <p>
      * The given class must either implement the {@link java.sql.Driver} or {@link javax.sql.DataSource} class. If the
      * class implements the {@link java.sql.Driver} class, a valid jdbc url must be given. Otherwise, if it does not
@@ -47,7 +70,7 @@ public abstract class HikariConnector implements Connector {
         Preconditions.checkState(this.source == null, "connector already initialized");
         HikariConfig config = new HikariConfig();
 
-        DatabaseManager.getLogger().info("Configuring data source.");
+        LOGGER.info("Configuring data source.");
         if (java.sql.Driver.class.isAssignableFrom(clazz)) {
             if (jdbcUrl == null) {
                 throw new IllegalArgumentException("jdbc url required");
@@ -57,13 +80,13 @@ public abstract class HikariConnector implements Connector {
                 config.setDriverClassName(clazz.getName());
                 config.setJdbcUrl(jdbcUrl);
             } catch (RuntimeException ex) {
-                DatabaseManager.getLogger().log(Level.SEVERE, "Failed to configure data source.", ex);
+                LOGGER.log(Level.SEVERE, "Failed to configure data source.", ex);
                 throw ex;
             }
         } else if (javax.sql.DataSource.class.isAssignableFrom(clazz)) {
             config.setDataSourceClassName(clazz.getName());
         } else {
-            throw new IllegalArgumentException("unknown class");
+            throw new IllegalArgumentException("unknown driver class");
         }
 
         if (properties != null) {
@@ -72,21 +95,21 @@ public abstract class HikariConnector implements Connector {
 
         config.setUsername(user);
         config.setPassword(password);
-        config.setAutoCommit(true);
+        configure(config);
 
         if (this.consumer != null) {
             try {
                 this.consumer.accept(config);
             } catch (RuntimeException ex) {
-                DatabaseManager.getLogger().log(Level.WARNING, "Failed custom data source configuration.", ex);
+                LOGGER.log(Level.WARNING, "Failed custom data source configuration.", ex);
             }
         }
 
+        LOGGER.info("Setting up data source.");
         try {
-            DatabaseManager.getLogger().info("Setting up data source.");
             this.source = new HikariDataSource(config);
         } catch (RuntimeException ex) {
-            DatabaseManager.getLogger().log(Level.SEVERE, "Failed to set up data source.", ex);
+            LOGGER.log(Level.SEVERE, "Failed to set up data source.", ex);
             throw ex;
         }
     }
@@ -94,7 +117,7 @@ public abstract class HikariConnector implements Connector {
     @Override
     public void shutdown() {
         if (this.source != null && !this.source.isClosed()) {
-            DatabaseManager.getLogger().info("Shutting down data source.");
+            LOGGER.info("Shutting down data source.");
             this.source.close();
         }
 

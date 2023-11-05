@@ -1,7 +1,6 @@
 package de.g4memas0n.core.database.connector;
 
 import com.zaxxer.hikari.HikariConfig;
-import de.g4memas0n.core.database.DatabaseManager;
 import de.g4memas0n.core.database.driver.Driver;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -12,7 +11,7 @@ import java.util.logging.Level;
 /**
  * A hikari connector that uses the {@link Driver} class to connect to a database using the hikari connector.
  */
-public class HikariDriverConnector extends HikariConnector {
+public class GenericHikariConnector extends HikariConnector {
 
     private Driver driver;
 
@@ -20,7 +19,7 @@ public class HikariDriverConnector extends HikariConnector {
      * Constructs a new hikari connector for the given {@link Driver driver}.
      * @param driver the driver to use or null.
      */
-    public HikariDriverConnector(@Nullable Driver driver) {
+    public GenericHikariConnector(@Nullable Driver driver) {
         this(driver, null);
     }
 
@@ -29,7 +28,7 @@ public class HikariDriverConnector extends HikariConnector {
      * @param driver the driver to use or null.
      * @param consumer a custom hikari configurator or null.
      */
-    public HikariDriverConnector(@Nullable Driver driver, @Nullable Consumer<HikariConfig> consumer) {
+    public GenericHikariConnector(@Nullable Driver driver, @Nullable Consumer<HikariConfig> consumer) {
         super(consumer);
         this.driver = driver;
     }
@@ -54,7 +53,7 @@ public class HikariDriverConnector extends HikariConnector {
         try {
             clazz = driver.getDriverClass();
         } catch (ClassNotFoundException ex) {
-            DatabaseManager.getLogger().log(Level.SEVERE, "driver class not found", ex);
+            LOGGER.log(Level.SEVERE, "Failed to find driver class.", ex);
             throw new RuntimeException(ex);
         }
 

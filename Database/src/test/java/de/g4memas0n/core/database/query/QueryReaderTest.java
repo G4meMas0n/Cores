@@ -1,6 +1,5 @@
 package de.g4memas0n.core.database.query;
 
-import de.g4memas0n.core.database.driver.Driver.Vendor;
 import org.junit.Assert;
 import org.junit.Test;
 import java.io.IOException;
@@ -38,17 +37,16 @@ public class QueryReaderTest {
 
     @Test
     public void readFileVendorSuccessTest() {
-        Vendor vendor = new Vendor("vendor", 1);
         Properties queries;
 
         try {
-            queries = QueryReader.getQueries("queries/test", vendor);
+            queries = QueryReader.getQueries("queries/test", "MySQL");
         } catch (IOException ex) {
             Assert.fail(ex.toString());
             return;
         }
 
-        Map<String, String> tests = Map.of("key1", "Query1", "key2", "Query2", "key3", "Query3");
+        Map<String, String> tests = Map.of("key1", "Query1", "key2", "Query2");
         String result;
 
         for (Map.Entry<String, String> entry : tests.entrySet()) {

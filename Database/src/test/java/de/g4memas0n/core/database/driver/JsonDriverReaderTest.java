@@ -26,7 +26,13 @@ public class JsonDriverReaderTest {
         Driver.Vendor vendor = driver.getVendor();
         String jdbcUrl;
 
-        Assert.assertEquals("unexpected driver class", com.mysql.cj.jdbc.Driver.class, driver.getDriverClass());
+        try {
+            Class<?> clazz = driver.getDriverClass();
+            Assert.assertEquals("unexpected driver class", com.mysql.cj.jdbc.Driver.class, clazz);
+        } catch (ClassNotFoundException ex) {
+            Assert.fail("driver class not available");
+        }
+
         Assert.assertEquals("unexpected vendor name", "MySQL", vendor.getName());
         Assert.assertTrue("missing vendor version", vendor.hasVersion());
         Assert.assertEquals("unexpected vendor version", 8, vendor.getVersion());
@@ -42,7 +48,13 @@ public class JsonDriverReaderTest {
         Driver.Vendor vendor = driver.getVendor();
         Properties properties;
 
-        Assert.assertEquals("unexpected driver class", org.sqlite.SQLiteDataSource.class, driver.getDriverClass());
+        try {
+            Class<?> clazz = driver.getDriverClass();
+            Assert.assertEquals("unexpected driver class", org.sqlite.SQLiteDataSource.class, clazz);
+        } catch (ClassNotFoundException ex) {
+            Assert.fail("driver class not available");
+        }
+
         Assert.assertEquals("unexpected vendor name", "SQLite", vendor.getName());
         Assert.assertFalse("unexpected vendor version", vendor.hasVersion());
 
