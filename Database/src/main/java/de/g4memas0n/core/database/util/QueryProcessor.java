@@ -1,4 +1,4 @@
-package de.g4memas0n.core.database.query;
+package de.g4memas0n.core.database.util;
 
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;

@@ -54,6 +54,6 @@ public class SQLiteConnector extends FlatFileConnector {
             jdbcUrl.append(this.path);
         }
 
-        initialize(jdbcUrl.toString(), properties);
+        initialize(jdbcUrl.toString(), null);
     }
 }

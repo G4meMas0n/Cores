@@ -1,4 +1,4 @@
-package de.g4memas0n.core.database.query;
+package de.g4memas0n.core.database.util;
 
 import org.jetbrains.annotations.NotNull;
 import java.io.BufferedReader;
@@ -13,50 +13,7 @@ import java.util.Locale;
 /**
  * A loader class for batch sql files, containing batch statements.
  */
-public class BatchReader {
-
-    /**
-     * Reads the batch file from the given stream.
-     * @param stream the stream to read from.
-     * @return a list of all read batch statements.
-     * @throws IOException if an I/O error occurs.
-     */
-    public static @NotNull List<String> getBatch(@NotNull InputStream stream) throws IOException {
-        List<String> statements = new LinkedList<>();
-
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
-            StringBuilder query = new StringBuilder();
-            String line;
-            int index;
-
-            while ((line = reader.readLine()) != null) {
-                // Check for comments in the current line
-                if ((index = line.indexOf("--")) >= 0) {
-                    if (index == 0) {
-                        continue;
-                    }
-
-                    line = line.substring(0, index).trim();
-                }
-
-                // Check for ending statements
-                while ((index = line.indexOf(";")) >= 0) {
-                    query.append(line.substring(0, index).stripLeading());
-
-                    if (query.length() > 0) {
-                        statements.add(query.toString());
-                        query.setLength(0);
-                    }
-
-                    line = line.substring(index + 1);
-                }
-
-                query.append(line.trim());
-            }
-        }
-
-        return statements;
-    }
+public final class BatchReader {
 
     /**
      * Reads the batch file for the given basename.
@@ -66,14 +23,14 @@ public class BatchReader {
      * @throws IOException if an I/O error occurs.
      */
     public static @NotNull List<String> getBatch(@NotNull String basename) throws IOException {
-        String path = basename.toLowerCase(Locale.ROOT) + ".sql";
+        String path = basename.toLowerCase(Locale.ROOT) + (basename.endsWith(".sql") ? "" : ".sql");
 
         try (InputStream stream = BatchReader.class.getClassLoader().getResourceAsStream(path)) {
             if (stream == null) {
                 throw new IllegalArgumentException("file not found");
             }
 
-            return getBatch(stream);
+            return readBatch(stream);
         }
     }
 
@@ -104,5 +61,48 @@ public class BatchReader {
         } while (name != null);
 
         throw new IllegalArgumentException("files not found");
+    }
+
+    /**
+     * Reads the batch file from the given stream.
+     * @param stream the stream to read from.
+     * @return a list of all read batch statements.
+     * @throws IOException if an I/O error occurs.
+     */
+    public static @NotNull List<String> readBatch(@NotNull InputStream stream) throws IOException {
+        List<String> statements = new LinkedList<>();
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
+            StringBuilder query = new StringBuilder();
+            String line;
+            int index;
+
+            while ((line = reader.readLine()) != null) {
+                // Check for comments in the current line
+                if ((index = line.indexOf("--")) >= 0) {
+                    if (index == 0) {
+                        continue;
+                    }
+
+                    line = line.substring(0, index).trim();
+                }
+
+                // Check for ending statements
+                while ((index = line.indexOf(";")) >= 0) {
+                    query.append(line.substring(0, index).stripLeading());
+
+                    if (query.length() > 0) {
+                        statements.add(query.toString());
+                        query.setLength(0);
+                    }
+
+                    line = line.substring(index + 1);
+                }
+
+                query.append(line.strip().replaceAll(" {2,}", " "));
+            }
+        }
+
+        return statements;
     }
 }

@@ -59,6 +59,7 @@ public class MySQLConnector extends HikariConnector {
         } catch (ClassNotFoundException ignored) {
             try {
                 clazz = Class.forName("com.mysql.jdbc.Driver");
+                LOGGER.warning("Failed to find modern mysql driver. Falling back to legacy driver.");
             } catch (ClassNotFoundException ex) {
                 throw new RuntimeException("driver not available");
             }
@@ -79,6 +80,6 @@ public class MySQLConnector extends HikariConnector {
             throw new IllegalArgumentException("compromised properties");
         }
 
-        initialize(clazz, jdbcUrl, properties, properties.getProperty("user"), properties.getProperty("password"));
+        initialize(clazz, jdbcUrl, null, properties.getProperty("user"), properties.getProperty("password"));
     }
 }

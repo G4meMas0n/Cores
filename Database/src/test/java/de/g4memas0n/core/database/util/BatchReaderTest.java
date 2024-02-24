@@ -1,4 +1,4 @@
-package de.g4memas0n.core.database.query;
+package de.g4memas0n.core.database.util;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -39,7 +39,7 @@ public class BatchReaderTest {
         List<String> batch;
 
         try {
-            batch = BatchReader.getBatch("batches/test", "MySQL");
+            batch = BatchReader.getBatch("batches/test", "vendor");
         } catch (IOException ex) {
             Assert.fail(ex.toString());
             return;
