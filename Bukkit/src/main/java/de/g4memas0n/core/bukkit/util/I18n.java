@@ -35,7 +35,7 @@ public final class I18n {
      * @param plugin the plugin to which the class belongs to.
      * @param bundle the basename of the resource bundle.
      */
-    public I18n(@NotNull final Plugin plugin, @NotNull final String bundle) {
+    public I18n(@NotNull Plugin plugin, @NotNull String bundle) {
         this.plugin = plugin;
         this.classLoader = new CustomFileClassLoader(plugin.getClass().getClassLoader(), plugin.getDataFolder());
         this.defaultBundle = ResourceBundle.getBundle(bundle);
@@ -47,7 +47,7 @@ public final class I18n {
      * Loads the resource bundles for the given locale.
      * @param locale the new bundle locale.
      */
-    public void load(@NotNull final Locale locale) {
+    public void load(@NotNull Locale locale) {
         this.plugin.getLogger().info("Loading resource bundle for locale: " + locale);
 
         try {
@@ -65,12 +65,9 @@ public final class I18n {
             this.customBundle = ResourceBundle.getBundle(this.defaultBundle.getBaseBundleName(), locale,
                     this.classLoader, Control.getNoFallbackControl(Control.FORMAT_PROPERTIES));
             this.plugin.getLogger().info("Found custom resource bundle for locale: " + locale);
-        } catch (MissingResourceException ignored) {
-
-        }
+        } catch (MissingResourceException ignored) { }
 
         this.plugin.getLogger().info("Locale has been changed. Using locale " + this.locale());
-
         instance = this;
     }
 
@@ -99,13 +96,11 @@ public final class I18n {
      * @param key the key of the message to translate.
      * @return the translated message.
      */
-    public @NotNull String translate(@NotNull final String key) {
+    public @NotNull String translate(@NotNull String key) {
         if (this.customBundle != null) {
             try {
                 return this.customBundle.getString(key);
-            } catch (MissingResourceException ignored) {
-
-            }
+            } catch (MissingResourceException ignored) { }
         }
 
         try {
@@ -125,8 +120,8 @@ public final class I18n {
      * @param arguments the arguments to use for formatting.
      * @return the translated and formatted message.
      */
-    public @NotNull String format(@NotNull final String key, @NotNull final Object... arguments) {
-        final String format = translate(key);
+    public @NotNull String format(@NotNull String key, @NotNull Object... arguments) {
+        String format = translate(key);
 
         if (arguments.length > 0) {
             for (int index = 0; index < arguments.length; index++) {
@@ -142,9 +137,7 @@ public final class I18n {
                 this.plugin.getLogger().log(Level.WARNING, "Illegal message format for key: " + key, ex);
                 try {
                     return MessageFormat.format(format.replaceAll("\\{(\\D*?)}", "\\[$1\\]"), arguments);
-                } catch (IllegalArgumentException ignored) {
-
-                }
+                } catch (IllegalArgumentException ignored) { }
             }
         }
 
@@ -156,7 +149,7 @@ public final class I18n {
      * @param key the key of the message to check.
      * @return true if it has a message for the key, false otherwise.
      */
-    public boolean contains(@NotNull final String key) {
+    public boolean contains(@NotNull String key) {
         return this.defaultBundle.containsKey(key);
     }
 
@@ -168,7 +161,7 @@ public final class I18n {
      * @return the translated and formatted message.
      * @see #format(String, Object...)
      */
-    public static @NotNull String tl(@NotNull final String key, @NotNull final Object... arguments) {
+    public static @NotNull String tl(@NotNull String key, @NotNull Object... arguments) {
         Preconditions.checkState(instance != null, "localization unavailable");
         return instance.format(key, arguments);
     }
@@ -179,7 +172,7 @@ public final class I18n {
      * @return true if it has a message for the key, false otherwise.
      * @see #contains(String)
      */
-    public static boolean has(@NotNull final String key) {
+    public static boolean has(@NotNull String key) {
         return instance != null && instance.contains(key);
     }
 
@@ -190,16 +183,14 @@ public final class I18n {
 
         private final File directory;
 
-        private CustomFileClassLoader(@NotNull final ClassLoader loader, @NotNull final File directory) {
+        private CustomFileClassLoader(@NotNull ClassLoader loader, @NotNull File directory) {
             super(loader);
-
             this.directory = directory;
         }
 
         @Override
-        public @Nullable URL getResource(@NotNull final String name) {
-            final File file = new File(this.directory, name);
-
+        public @Nullable URL getResource(@NotNull String name) {
+            File file = new File(this.directory, name);
             if (file.exists()) {
                 try {
                     return file.toURI().toURL();
@@ -212,9 +203,8 @@ public final class I18n {
         }
 
         @Override
-        public @Nullable InputStream getResourceAsStream(@NotNull final String name) {
-            final File file = new File(this.directory, name);
-
+        public @Nullable InputStream getResourceAsStream(@NotNull String name) {
+            File file = new File(this.directory, name);
             if (file.exists()) {
                 try {
                     return new FileInputStream(file);

@@ -2,7 +2,6 @@ package de.g4memas0n.core.bukkit.command;
 
 import de.g4memas0n.core.bukkit.util.I18n;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,7 +31,7 @@ public abstract class SubCommand<T extends JavaPlugin> {
      * @param name the name of the subcommand.
      * @param permission the permission for the subcommand or null.
      */
-    public SubCommand(@NotNull final String name, @Nullable final String permission) {
+    public SubCommand(@NotNull String name, @Nullable String permission) {
         this.name = name.toLowerCase(Locale.ROOT);
         this.permission = permission;
     }
@@ -42,7 +41,7 @@ public abstract class SubCommand<T extends JavaPlugin> {
      * @param plugin the instance to the plugin main class.
      * @return true if it has been registered, false otherwise.
      */
-    public boolean register(@NotNull final T plugin) {
+    public boolean register(@NotNull T plugin) {
         if (this.plugin == null) {
             this.plugin = plugin;
             return true;
@@ -56,7 +55,7 @@ public abstract class SubCommand<T extends JavaPlugin> {
      * @param plugin the instance to the plugin main class.
      * @return true if it has been unregistered, false otherwise.
      */
-    public boolean unregister(@NotNull final T plugin) {
+    public boolean unregister(@NotNull T plugin) {
         if (this.plugin == plugin) {
             this.plugin = null;
             return true;
@@ -100,7 +99,7 @@ public abstract class SubCommand<T extends JavaPlugin> {
      * Sets the description for the subcommand.
      * @param description the new description or null.
      */
-    public void setDescription(@Nullable final String description) {
+    public void setDescription(@Nullable String description) {
         this.description = description;
     }
 
@@ -131,20 +130,19 @@ public abstract class SubCommand<T extends JavaPlugin> {
      * Sets the usage for the subcommand.
      * @param usage the new usage or null.
      */
-    public void setUsage(@Nullable final String usage) {
+    public void setUsage(@Nullable String usage) {
         this.usage = usage;
     }
 
     /**
      * Executes this command for the given {@code sender} with the given {@code arguments}, returning its success.
      * <p>
-     *     Note:<br>
-     *     This method gets only called if the command source ({@code sender}) is permitted to perform this command.
-     *     This means that the implementation of this method is not required to check the permission for the given
-     *     {@code sender}.<br>
-     *     If the implementation of this method returns {@code false}, the description and usage of this command
-     *     will be send to the command source ({@code sender}).
-     * </p>
+     * Note:<br>
+     * This method gets only called if the command source ({@code sender}) is permitted to perform this command.
+     * This means that the implementation of this method is not required to check the permission for the given
+     * {@code sender}.<br>
+     * If the implementation of this method returns {@code false}, the description and usage of this command
+     * will be sent to the command source ({@code sender}).
      *
      * @param sender the source who executed the command.
      * @param alias the alias that was used for the command.
@@ -154,31 +152,13 @@ public abstract class SubCommand<T extends JavaPlugin> {
     public abstract boolean execute(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] arguments);
 
     /**
-     * Executes this command for the given {@code player} with the given {@code arguments}, returning its success.
-     * <p>
-     *     Note:<br>
-     *     This methods gets called automatically if the command is executed by a player. The default implementation
-     *     of this method, casts the player as sender and calls {@link #execute(CommandSender, String, String[])}.
-     * </p>
-     * @param player the player who executed the command.
-     * @param alias the alias that was used for the command.
-     * @param arguments the passed arguments of the player.
-     * @return {@code true} if the execution was successful and valid.
-     * @see #execute(CommandSender, String, String[])
-     */
-    public boolean execute(@NotNull Player player, @NotNull String alias, @NotNull String[] arguments) {
-        return execute((CommandSender) player, alias, arguments);
-    }
-
-    /**
      * Requests a list of possible completions for the last element in the given {@code arguments} if it gets executed
      * by the given {@code sender}.
      * <p>
-     *     Note:<br>
-     *     This method gets only called if the command source ({@code sender}) is permitted to perform this command.
-     *     This means that the implementation of this method is not required to check the permission for the given
-     *     {@code sender}.
-     * </p>
+     * Note:<br>
+     * This method gets only called if the command source ({@code sender}) is permitted to perform this command.
+     * This means that the implementation of this method is not required to check the permission for the given
+     * {@code sender}.
      *
      * @param sender the source who tab-completed the command.
      * @param alias the alias that was used for the command.
@@ -187,32 +167,13 @@ public abstract class SubCommand<T extends JavaPlugin> {
      */
     public abstract @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] arguments);
 
-    /**
-     * Requests a list of possible completions for the last element in the given {@code arguments} if it gets executed
-     * by the given {@code player}.
-     * <p>
-     *     Note:<br>
-     *     This methods gets called automatically if the command is executed by a player. The default implementation
-     *     of this method, casts the player as sender and calls {@link #tabComplete(CommandSender, String, String[])}.
-     * </p>
-     * 
-     * @param player the player who tab-completed the command.
-     * @param alias the alias that was used for the command.
-     * @param arguments the passed arguments of the player, including the final partial argument to be completed.
-     * @return a list of possible completions for the final arguments.
-     * @see #tabComplete(CommandSender, String, String[]) 
-     */
-    public @NotNull List<String> tabComplete(@NotNull Player player, @NotNull String alias, @NotNull String[] arguments) {
-        return tabComplete((CommandSender) player, alias, arguments);
-    }
-
     @Override
     public @NotNull String toString() {
         return getClass().getSimpleName() + "{name='" + this.name + "', permission='" + this.permission + "}";
     }
 
     @Override
-    public boolean equals(@Nullable final Object object) {
+    public boolean equals(@Nullable Object object) {
         if (object == this) {
             return true;
         }
