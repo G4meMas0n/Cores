@@ -10,6 +10,7 @@ import java.util.logging.Logger;
  * An abstract database connector for connecting to a file based database.
  * @see IConnector
  */
+@SuppressWarnings("unused")
 public abstract class FlatFileConnector implements IConnector {
 
     public static Logger logger = Logger.getLogger(FlatFileConnector.class.getName());

@@ -8,6 +8,7 @@ import java.util.Properties;
  * @see HikariConnector
  * @see IConnector
  */
+@SuppressWarnings("unused")
 public class MySQLConnector extends HikariConnector {
 
     @Override

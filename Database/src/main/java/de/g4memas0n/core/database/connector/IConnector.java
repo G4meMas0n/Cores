@@ -9,6 +9,7 @@ import java.util.Properties;
 /**
  * An interface for connecting to a database.
  */
+@SuppressWarnings("unused")
 public interface IConnector extends Wrapper {
 
     /**

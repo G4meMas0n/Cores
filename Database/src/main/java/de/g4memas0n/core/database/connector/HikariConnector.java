@@ -15,6 +15,7 @@ import java.util.logging.Logger;
  * A database connector that connects through HikariCP.
  * @see IConnector
  */
+@SuppressWarnings("unused")
 public class HikariConnector implements IConnector {
 
     public static Logger logger = Logger.getLogger(HikariConnector.class.getName());

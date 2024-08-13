@@ -14,6 +14,7 @@ import java.util.List;
 /**
  * A reader class for loading .sql batch files.
  */
+@SuppressWarnings("unused")
 public final class BatchReader {
 
     private BatchReader() {}

@@ -12,6 +12,7 @@ import java.util.Properties;
  * @see FlatFileConnector
  * @see IConnector
  */
+@SuppressWarnings("unused")
 public class SQLiteConnector extends FlatFileConnector {
 
     private Properties properties;
