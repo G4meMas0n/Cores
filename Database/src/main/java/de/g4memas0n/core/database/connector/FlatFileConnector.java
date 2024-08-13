@@ -1,72 +1,76 @@
 package de.g4memas0n.core.database.connector;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import java.nio.file.Path;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Properties;
-import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * An abstract connector class for connecting to a local flat-file database.
+ * An abstract database connector for connecting to a file based database.
+ * @see IConnector
  */
-public abstract class FlatFileConnector implements Connector {
+public abstract class FlatFileConnector implements IConnector {
 
-    private String jdbcUrl;
-    private Properties properties;
-
-    /**
-     * The default constructor for the implementing a flat-file connector.
-     */
-    public FlatFileConnector() { }
+    public static Logger logger = Logger.getLogger(FlatFileConnector.class.getName());
+    private Connection connection;
+    private final Path path;
 
     /**
-     * Configures the given properties.
-     * <p>
-     * This method will be called during the {@link #initialize(String, java.util.Properties)} method and is intended
-     * to be overwritten by the implementing subclass to configure the driver.
-     * @param properties the properties to configure.
+     * Constructs a file based connector.
+     * @param path the path to the database file.
      */
-    public void configure(@NotNull Properties properties) {
-
-    }
-
-    /**
-     * Initializes the flat-file connector with the given connection properties.
-     * @param jdbcUrl the jdbcUrl to use.
-     * @param properties the properties to use.
-     * @throws RuntimeException if the driver for the given jdbc-url is not available.
-     */
-    public void initialize(@NotNull String jdbcUrl, @Nullable Properties properties) {
-        try {
-            DriverManager.getDriver(jdbcUrl);
-        } catch (SQLException ex) {
-            LOGGER.log(Level.SEVERE, "Failed to find available driver.", ex);
-            throw new RuntimeException("driver not available", ex);
-        }
-
-        this.jdbcUrl = jdbcUrl;
-        this.properties = new Properties();
-
-        configure(this.properties);
-        if (properties != null) {
-            properties.forEach((key, value) -> this.properties.setProperty(key.toString(), value.toString()));
-        }
+    public FlatFileConnector(@NotNull Path path) {
+        this.path = path;
     }
 
     @Override
     public void shutdown() {
-        this.jdbcUrl = null;
-        this.properties = null;
+        if (connection != null) {
+            try {
+                connection.close();
+            } catch (SQLException ignored) {}
+        }
     }
 
     @Override
-    public @NotNull Connection getConnection() throws SQLException {
-        if (this.jdbcUrl == null) {
-            throw new SQLException("jdbc-url is null");
-        }
+    public void closeConnection(@NotNull Connection connection) {
+        try {
+            if (!connection.getAutoCommit()) {
+                connection.rollback();
+            }
+        } catch (SQLException ignored) {}
+    }
 
-        return DriverManager.getConnection(this.jdbcUrl, this.properties);
+    /**
+     * Attempts to establish a new connection to the database.
+     * @param path the path to the database file.
+     * @return a connection to the database.
+     * @throws SQLException if a database access error occurs.
+     */
+    public abstract @NotNull Connection createConnection(@NotNull Path path) throws SQLException;
+
+    @Override
+    public @NotNull Connection getConnection() throws SQLException {
+        if (connection == null || connection.isClosed()) {
+            connection = createConnection(path);
+        }
+        return connection;
+    }
+
+    @Override
+    public boolean isWrapperFor(@NotNull Class<?> type) {
+        return IConnector.class.equals(type) || Connection.class.isAssignableFrom(type);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> T unwrap(@NotNull Class<T> type) throws SQLException {
+        if (IConnector.class.equals(type)) {
+            return (T) this;
+        } else if (Connection.class.isAssignableFrom(type)) {
+            return (T) getConnection();
+        }
+        throw new SQLException("Cannot unwrap to " + type);
     }
 }

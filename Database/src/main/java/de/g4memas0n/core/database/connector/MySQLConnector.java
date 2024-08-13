@@ -1,85 +1,67 @@
 package de.g4memas0n.core.database.connector;
 
-import com.google.common.base.Preconditions;
-import com.zaxxer.hikari.HikariConfig;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import java.util.Properties;
-import java.util.function.Consumer;
-import java.util.logging.Level;
 
 /**
- * A connector class for connecting to a mysql database using the hikari data source.
+ * A mysql database connector.
+ * @see HikariConnector
+ * @see IConnector
  */
 public class MySQLConnector extends HikariConnector {
 
-    /**
-     * The public default constructor for a mysql connector.
-     */
-    public MySQLConnector() {
-        super();
-    }
-
-    /**
-     * The public constructor for a mysql connector with a given custom configurator.
-     * @param consumer a custom hikari configurator or null.
-     */
-    public MySQLConnector(@Nullable Consumer<HikariConfig> consumer) {
-        super(consumer);
-    }
-
     @Override
-    public void configure(@NotNull HikariConfig config) {
+    public void configure(@NotNull Properties properties) {
+        /*
+         * Setup MySQL driver instead of data source as noted in:
+         * https://github.com/brettwooldridge/HikariCP/tree/dev
+         */
+        if (properties.getProperty("driverClassName") == null) {
+            Class<?> driver;
+            try {
+                driver = Class.forName("com.mysql.cj.jdbc.Driver");
+            } catch (ClassNotFoundException ignored) {
+                try {
+                    driver = Class.forName("com.mysql.jdbc.Driver");
+                    logger.warning("Failed to find MySQL driver, falling back to legacy driver");
+                } catch (ClassNotFoundException ex) {
+                    logger.warning("Failed to find MySQL driver");
+                    throw new RuntimeException("driver not available", ex);
+                }
+            }
+
+            properties.setProperty("driverClassName", driver.getName());
+            properties.setProperty("dataSourceClassName", null);
+        }
+
+        // Setup jdbcUrl by using the data source properties if not already set
+        if (properties.getProperty("jdbcUrl") == null) {
+            String databaseName = properties.getProperty("databaseName");
+            String serverName = properties.getProperty("serverName");
+            String portNumber = properties.getProperty("portNumber");
+
+            if (databaseName == null || serverName == null || portNumber == null) {
+                throw new IllegalArgumentException("databaseName or serverName or portNumber is null");
+            }
+
+            properties.setProperty("jdbcUrl", "jdbc:mysql://" + serverName + ":" + portNumber + "/" + databaseName);
+        }
+
         /*
          * Setting the recommended data source configuration for mysql as noted in:
          * https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration
          */
-        config.addDataSourceProperty("cachePrepStmts", true);
-        config.addDataSourceProperty("prepStmtCacheSize", 250);
-        config.addDataSourceProperty("prepStmtCacheSqlLimit", 2048);
-        config.addDataSourceProperty("useServerPrepStmts", true);
-        config.addDataSourceProperty("useLocalSessionState", true);
-        config.addDataSourceProperty("rewriteBatchedStatements", true);
-        config.addDataSourceProperty("cacheResultSetMetadata", true);
-        config.addDataSourceProperty("cacheServerConfiguration", true);
-        config.addDataSourceProperty("elideSetAutoCommits", true);
-        config.addDataSourceProperty("maintainTimeStats=", false);
+        properties.setProperty("dataSource.cachePrepStmts", "true");
+        properties.setProperty("dataSource.prepStmtCacheSize", "250");
+        properties.setProperty("dataSource.prepStmtCacheSqlLimit", "2048");
+        properties.setProperty("dataSource.useServerPrepStmts", "true");
+        properties.setProperty("dataSource.useLocalSessionState", "true");
+        properties.setProperty("dataSource.rewriteBatchedStatements", "true");
+        properties.setProperty("dataSource.cacheResultSetMetadata", "true");
+        properties.setProperty("dataSource.cacheServerConfiguration", "true");
+        properties.setProperty("dataSource.elideSetAutoCommits", "true");
+        properties.setProperty("dataSource.maintainTimeStats", "false");
 
-        super.configure(config);
-    }
-
-    @Override
-    public void initialize(@Nullable Properties properties) {
-        Preconditions.checkArgument(properties != null);
-        Class<?> clazz;
-        String jdbcUrl;
-
-        try {
-            clazz = Class.forName("com.mysql.cj.jdbc.Driver");
-        } catch (ClassNotFoundException ignored) {
-            try {
-                clazz = Class.forName("com.mysql.jdbc.Driver");
-                LOGGER.warning("Failed to find modern mysql driver. Falling back to legacy driver.");
-            } catch (ClassNotFoundException ex) {
-                throw new RuntimeException("driver not available");
-            }
-        }
-
-        try {
-            // setting up jdbc url
-            String host = (String) properties.getOrDefault("host", "127.0.0.1");
-            String port = (String) properties.getOrDefault("port", "3306");
-
-            if (!properties.containsKey("database")) {
-                throw new IllegalArgumentException("missing database property");
-            }
-
-            jdbcUrl = "jdbc:mysql://" + host + ":" + port + "/" + properties.getProperty("database");
-        } catch (ClassCastException ex) {
-            LOGGER.log(Level.SEVERE, "Failed initialization due to compromised properties", ex);
-            throw new IllegalArgumentException("compromised properties");
-        }
-
-        initialize(clazz, jdbcUrl, null, properties.getProperty("user"), properties.getProperty("password"));
+        super.configure(properties);
     }
 }

@@ -1,59 +1,53 @@
 package de.g4memas0n.core.database.connector;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Properties;
 
 /**
- * A connector class for connecting to a flat-file sqlite database.
+ * A sqlite database connector.
+ * @see FlatFileConnector
+ * @see IConnector
  */
 public class SQLiteConnector extends FlatFileConnector {
 
-    private final Path path;
+    private Properties properties;
 
     /**
-     * The public default constructor for a sqlite connector.
-     */
-    public SQLiteConnector() {
-        this(null);
-    }
-
-    /**
-     * The public constructor for a sqlite connector with a given database path.
+     * Constructs a sqlite database connector.
      * @param path the path to the database file.
+     * @see FlatFileConnector
      */
-    public SQLiteConnector(@Nullable Path path) {
-        this.path = path;
+    public SQLiteConnector(@NotNull Path path) {
+        super(path);
     }
 
     @Override
     public void configure(@NotNull Properties properties) {
-        properties.setProperty("encoding", "UTF-8");
+        // Set default encoding to UTF-8
+        if (properties.getProperty("encoding") == null) {
+            properties.setProperty("encoding", "UTF-8");
+        }
 
-        super.configure(properties);
-    }
-
-    @Override
-    public void initialize(@Nullable Properties properties) {
         try {
             Class.forName("org.sqlite.JDBC");
         } catch (ClassNotFoundException ex) {
-            throw new RuntimeException("driver not available", ex);
+            logger.warning("Failed to find sqlite driver");
+            throw new RuntimeException(ex);
         }
 
-        StringBuilder jdbcUrl = new StringBuilder("jdbc:sqlite://");
+        this.properties = properties;
+    }
 
-        if (properties != null && properties.containsKey("path")) {
-            jdbcUrl.append(properties.getProperty("path"));
-        } else {
-            if (this.path == null) {
-                throw new IllegalArgumentException("missing path property");
-            }
-
-            jdbcUrl.append(this.path);
+    @Override
+    public @NotNull Connection createConnection(@NotNull Path path) throws SQLException {
+        String jdbcUrl = properties.getProperty("jdbcUrl");
+        if (jdbcUrl == null) {
+            jdbcUrl = "jdbc:sqlite:" + path;
         }
-
-        initialize(jdbcUrl.toString(), null);
+        return DriverManager.getConnection(jdbcUrl, properties);
     }
 }
