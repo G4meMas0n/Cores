@@ -23,6 +23,7 @@ import java.util.Objects;
  * An abstract command class to extend for registering to bukkit.
  * @param <T> the main class of the plugin.
  */
+@SuppressWarnings("unused")
 public abstract class BaseCommand<T extends JavaPlugin> extends SubCommand<T> implements TabExecutor {
 
     private Map<String, SubCommand<T>> commands;

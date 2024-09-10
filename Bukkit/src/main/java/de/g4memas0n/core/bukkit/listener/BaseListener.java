@@ -11,6 +11,7 @@ import java.lang.reflect.Method;
  * An abstract listener class to extend for listening to bukkit events.
  * @param <T> the main class of the plugin.
  */
+@SuppressWarnings("unused")
 public abstract class BaseListener<T extends JavaPlugin> implements Listener {
 
     /**

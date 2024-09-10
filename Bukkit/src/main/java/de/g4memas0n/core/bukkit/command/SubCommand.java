@@ -13,6 +13,7 @@ import java.util.Objects;
  * An abstract subcommand class to extend.
  * @param <T> the main class of the plugin.
  */
+@SuppressWarnings("unused")
 public abstract class SubCommand<T extends JavaPlugin> {
 
     protected final String name;

@@ -20,6 +20,7 @@ import java.util.logging.Level;
 /**
  * A class providing access to translated messages.
  */
+@SuppressWarnings("unused")
 public final class I18n {
 
     private static I18n instance;

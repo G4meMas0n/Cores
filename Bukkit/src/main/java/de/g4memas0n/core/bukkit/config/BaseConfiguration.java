@@ -15,11 +15,14 @@ import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
 import java.util.logging.Level;
 
 /**
  * An extended class for the bukkit configuration.
  */
+@SuppressWarnings("unused")
 public class BaseConfiguration extends YamlConfiguration {
 
     protected final Plugin plugin;
@@ -115,6 +118,34 @@ public class BaseConfiguration extends YamlConfiguration {
      */
 
     /**
+     * Gets the requested BigDecimal at the given path.
+     * <p>
+     * If the BigDecimal does not exist but a default value has been specified, this will return the default value. If
+     * the BigDecimal does not exist and no default value was specified, this will return null.
+     * @param path the path of the BigDecimal to get.
+     * @return the requested BigDecimal.
+     */
+    @Nullable
+    public BigDecimal getBigDecimal(@NotNull String path) {
+        return getBigDecimal(this, path, null);
+    }
+
+    /**
+     * Gets the requested BigDecimal at the given path, returning a default value of not found.
+     * <p>
+     * If the BigDecimal does not exist then the specified default value will be returned regardless of if a default
+     * has been identified in the root Configuration.
+     * @param path the path of the BigDecimal to get.
+     * @param def the default value to return if the path is not found or is not a BigDecimal.
+     * @return the requested BigDecimal.
+     */
+    @Contract("_, !null -> !null")
+    @Nullable
+    public BigDecimal getBigDecimal(@NotNull String path, @Nullable BigDecimal def) {
+        return getBigDecimal(this, path, def);
+    }
+
+    /**
      * Gets the requested BigDecimal at the given section and path.
      * <p>
      * If the BigDecimal does not exist but a default value has been specified, this will return the default value. If
@@ -149,6 +180,34 @@ public class BaseConfiguration extends YamlConfiguration {
             } catch (NumberFormatException ignored) { }
         }
         return def;
+    }
+
+    /**
+     * Gets the requested Locale at the given path.
+     * <p>
+     * If the Locale does not exist but a default value has been specified, this will return the default value. If
+     * the Locale does not exist and no default value was specified, this will return null.
+     * @param path the path of the Locale to get.
+     * @return the requested Locale.
+     */
+    @Nullable
+    public Locale getLocale(@NotNull String path) {
+        return getLocale(this, path, null);
+    }
+
+    /**
+     * Gets the requested Locale at the given path, returning a default value of not found.
+     * <p>
+     * If the Locale does not exist then the specified default value will be returned regardless of if a default
+     * has been identified in the root Configuration.
+     * @param path the path of the Locale to get.
+     * @param def the default value to return if the path is not found or is not a Locale.
+     * @return the requested Locale.
+     */
+    @Contract("_, !null -> !null")
+    @Nullable
+    public Locale getLocale(@NotNull String path, @Nullable Locale def) {
+        return getLocale(this, path, def);
     }
 
     /**
@@ -191,6 +250,108 @@ public class BaseConfiguration extends YamlConfiguration {
             }
         }
         return def;
+    }
+
+    /**
+     * Gets the requested Properties at the given path.
+     * <p>
+     * If the Properties do not exist but a default value has been specified, this will return the default value. If
+     * the Properties do not exist and no default value was specified, this will return null.
+     * @param path the path of the Properties to get.
+     * @return the requested Properties.
+     */
+    @Nullable
+    public Properties getProperties(@NotNull String path) {
+        return getProperties(this, path, null);
+    }
+
+    /**
+     * Gets the requested Properties at the given path, returning a default value of not found.
+     * <p>
+     * If the Properties do not exist then the specified default value will be returned regardless of if a default
+     * has been identified in the root Configuration.
+     * @param path the path of the Properties to get.
+     * @param def the default value to return if the path is not found or contains no Properties.
+     * @return the requested Properties.
+     */
+    @Contract("_, !null -> !null")
+    @Nullable
+    public Properties getProperties(@NotNull String path, @Nullable Properties def) {
+        return getProperties(this, path, def);
+    }
+
+    /**
+     * Gets the requested Properties at the given section and path.
+     * <p>
+     * If the Properties do not exist but a default value has been specified, this will return the default value. If
+     * the Properties do not exist and no default value was specified, this will return null.
+     * @param section the section of the Properties to get.
+     * @param path the path of the Properties to get.
+     * @return the requested Properties.
+     */
+    @Nullable
+    public Properties getProperties(@NotNull ConfigurationSection section, @NotNull String path) {
+        return getProperties(section, path, null);
+    }
+
+    /**
+     * Gets the requested Properties at the given section and path, returning a default value of not found.
+     * <p>
+     * If the Properties do not exist then the specified default value will be returned regardless of if a default
+     * has been identified in the root Configuration.
+     * @param section the section of the Properties to get.
+     * @param path the path of the Properties to get.
+     * @param def the default value to return if the path is not found or contains no Properties.
+     * @return the requested Properties.
+     */
+    @Contract("_, _, !null -> !null")
+    @Nullable
+    public Properties getProperties(@NotNull ConfigurationSection section, @NotNull String path,
+                                    @Nullable Properties def) {
+        if (section.contains(path, def == null) && section.isConfigurationSection(path)) {
+            ConfigurationSection props = section.getConfigurationSection(path);
+            Map<String, Object> values = props != null ? props.getValues(true) : null;
+            if (values != null && !values.isEmpty()) {
+                Properties properties = new Properties();
+                for (Map.Entry<String, Object> entry : values.entrySet()) {
+                    properties.put(entry.getKey(), entry.getValue().toString());
+                }
+                return properties;
+            }
+        }
+        return def;
+    }
+
+    /**
+     * Gets the requested Enum object at the given path.
+     * <p>
+     * If the Object does not exist but a default value has been specified, this will return the default value. If
+     * the Object does not exist and no default value was specified, this will return null.
+     * @param path the path of the Object to get.
+     * @param clazz the type of {@link java.lang.Enum}.
+     * @return the requested Enum object.
+     * @param <E> the type of {@link java.lang.Enum}.
+     */
+    @Nullable
+    public <E extends Enum<E>> E getEnum(@NotNull String path, @NotNull Class<E> clazz) {
+        return getEnum(this, path, clazz, null);
+    }
+
+    /**
+     * Gets the requested Enum object at the given path, returning a default value if not found.
+     * <p>
+     * If the Object does not exist then the specified default value will be returned regardless of if a default
+     * has been identified in the root Configuration.
+     * @param path the path of the Object to get.
+     * @param clazz the type of {@link java.lang.Enum}.
+     * @param def  the default object to return if the object is not present at the path.
+     * @return the requested Enum object.
+     * @param <E> the type of {@link java.lang.Enum}.
+     */
+    @Contract("_, _, !null -> !null")
+    @Nullable
+    public <E extends Enum<E>> E getEnum(@NotNull String path, @NotNull Class<E> clazz, @Nullable E def) {
+        return getEnum(this, path, clazz, def);
     }
 
     /**
