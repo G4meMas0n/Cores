@@ -51,15 +51,15 @@ public class BaseConfiguration extends YamlConfiguration {
      * Deletes the config file of the configuration.
      */
     public void delete() {
-        if (!this.config.exists()) {
-            this.plugin.getLogger().log(Level.WARNING, "Config file " + this.config + " could not be found.");
+        if (!config.exists()) {
+            plugin.getLogger().log(Level.WARNING, "Could not find config file " + config.getName());
             return;
         }
 
         try {
-            Files.delete(this.config.toPath());
+            Files.delete(config.toPath());
         } catch (IOException ex) {
-            this.plugin.getLogger().log(Level.SEVERE, "Failed to delete config file: " + this.config, ex);
+            plugin.getLogger().log(Level.SEVERE, "Failed to delete config file " + config.getName(), ex);
         }
     }
 
@@ -70,35 +70,37 @@ public class BaseConfiguration extends YamlConfiguration {
      * created with the template.
      */
     public void load() {
-        try (InputStream stream = getClass().getClassLoader().getResourceAsStream(this.config.getPath())) {
+        try (InputStream stream = plugin.getResource(config.getName())) {
             if (stream != null) {
-                if (!this.config.exists()) {
-                    this.plugin.getLogger().info("Creating config file from template: " + this.config);
-                    Files.copy(stream, this.config.toPath());
+                if (!config.exists()) {
+                    plugin.getLogger().info("Creating config file from template: " + config.getName());
+                    Files.copy(stream, config.toPath());
                 }
 
                 setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(stream)));
             }
         } catch (IOException ex) {
-            this.plugin.getLogger().log(Level.SEVERE, "Failed to read/write config file: " + this.config, ex);
+            if (!config.exists()) {
+                plugin.getLogger().log(Level.WARNING, "Failed to read/write template file " + config.getName(), ex);
+            }
         }
 
         try {
-            load(this.config);
+            load(config);
         } catch (InvalidConfigurationException ex) {
-            File broken = new File(this.config.getParentFile(), this.config.getName().replaceAll("(?i)(yml)$", "broken.$1"));
+            File broken = new File(config.getParentFile(), config.getName().replaceAll("(?i)(yml)$", "broken.$1"));
             if (!broken.exists() || broken.delete()) {
-                if (this.config.renameTo(broken)) {
-                    this.plugin.getLogger().log(Level.SEVERE, "Config file " + this.config + " is broken, it has been renamed to " + broken, ex.getCause());
+                if (config.renameTo(broken)) {
+                    plugin.getLogger().log(Level.WARNING, "Broken config file " + config.getName() + ", renaming it to " + broken.getName(), ex.getCause());
                     return;
                 }
             }
 
-            this.plugin.getLogger().log(Level.SEVERE, "Config file " + this.config + " is broken.", ex.getCause());
+            plugin.getLogger().log(Level.WARNING, "Broken config file " + config.getName(), ex.getCause());
         } catch (FileNotFoundException ex) {
-            this.plugin.getLogger().log(Level.WARNING, "Config file " + this.config + " could not be found.");
+            plugin.getLogger().log(Level.WARNING, "Could not find config file " + config.getName(), ex);
         } catch (IOException ex) {
-            this.plugin.getLogger().log(Level.SEVERE, "Failed to load config file: " + this.config, ex);
+            plugin.getLogger().log(Level.SEVERE, "Failed to load config file: " + config.getName(), ex);
         }
     }
 
@@ -107,9 +109,9 @@ public class BaseConfiguration extends YamlConfiguration {
      */
     public void save() {
         try {
-            save(this.config);
+            save(config);
         } catch (IOException ex) {
-            this.plugin.getLogger().log(Level.SEVERE, "Failed to save config file: " + this.config, ex);
+            plugin.getLogger().log(Level.SEVERE, "Failed to save config file: " + config.getName(), ex);
         }
     }
 

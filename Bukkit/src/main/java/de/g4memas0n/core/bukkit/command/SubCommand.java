@@ -170,7 +170,7 @@ public abstract class SubCommand<T extends JavaPlugin> {
 
     @Override
     public @NotNull String toString() {
-        return getClass().getSimpleName() + "{name='" + this.name + "', permission='" + this.permission + "}";
+        return getClass().getSimpleName() + "{name='" + name + "', permission='" + permission + "}";
     }
 
     @Override
@@ -184,11 +184,11 @@ public abstract class SubCommand<T extends JavaPlugin> {
         }
 
         SubCommand<?> other = (SubCommand<?>) object;
-        return this.name.equals(other.name) && Objects.equals(this.permission, other.permission);
+        return name.equals(other.name) && Objects.equals(permission, other.permission);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.name, this.permission);
+        return Objects.hash(name, permission);
     }
 }

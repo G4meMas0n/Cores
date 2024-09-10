@@ -49,26 +49,26 @@ public final class I18n {
      * @param locale the new bundle locale.
      */
     public void load(@NotNull Locale locale) {
-        this.plugin.getLogger().info("Loading resource bundle for locale: " + locale);
+        plugin.getLogger().info("Loading resource bundle for locale: " + locale);
 
         try {
-            this.localBundle = ResourceBundle.getBundle(this.defaultBundle.getBaseBundleName(), locale);
+            localBundle = ResourceBundle.getBundle(defaultBundle.getBaseBundleName(), locale);
 
-            if (!this.localBundle.getLocale().equals(locale)) {
-                this.plugin.getLogger().warning("Resource bundle for locale " + locale
-                        + " could not be found. Using fallback locale: " + this.localBundle.getLocale());
+            if (!localBundle.getLocale().equals(locale)) {
+                plugin.getLogger().warning("Resource bundle for locale " + locale
+                        + " could not be found. Using fallback locale: " + localBundle.getLocale());
             }
         } catch (MissingResourceException ex) {
-            this.plugin.getLogger().log(Level.WARNING, "Failed to find resource bundle! Using default resource bundle.", ex);
+            plugin.getLogger().log(Level.WARNING, "Failed to find resource bundle! Using default resource bundle", ex);
         }
 
         try {
-            this.customBundle = ResourceBundle.getBundle(this.defaultBundle.getBaseBundleName(), locale,
-                    this.classLoader, Control.getNoFallbackControl(Control.FORMAT_PROPERTIES));
-            this.plugin.getLogger().info("Found custom resource bundle for locale: " + locale);
+            customBundle = ResourceBundle.getBundle(defaultBundle.getBaseBundleName(), locale,
+                    classLoader, Control.getNoFallbackControl(Control.FORMAT_PROPERTIES));
+            plugin.getLogger().info("Found custom resource bundle for locale: " + locale);
         } catch (MissingResourceException ignored) { }
 
-        this.plugin.getLogger().info("Locale has been changed. Using locale " + this.locale());
+        plugin.getLogger().info("Locale has been changed. Using locale " + locale());
         instance = this;
     }
 
@@ -76,11 +76,10 @@ public final class I18n {
      * Unloads the resource bundles for the current locale.
      */
     public void unload() {
-        ResourceBundle.clearCache(this.classLoader);
+        ResourceBundle.clearCache(classLoader);
 
-        this.localBundle = this.defaultBundle;
-        this.customBundle = null;
-
+        localBundle = defaultBundle;
+        customBundle = null;
         instance = null;
     }
 
@@ -89,7 +88,7 @@ public final class I18n {
      * @return the current bundle locale.
      */
     public @NotNull Locale locale() {
-        return this.customBundle != null ? this.customBundle.getLocale() : this.localBundle.getLocale();
+        return customBundle != null ? customBundle.getLocale() : localBundle.getLocale();
     }
 
     /**
@@ -98,20 +97,20 @@ public final class I18n {
      * @return the translated message.
      */
     public @NotNull String translate(@NotNull String key) {
-        if (this.customBundle != null) {
+        if (customBundle != null) {
             try {
-                return this.customBundle.getString(key);
+                return customBundle.getString(key);
             } catch (MissingResourceException ignored) { }
         }
 
         try {
-            return this.localBundle.getString(key);
+            return localBundle.getString(key);
         } catch (MissingResourceException ex) {
-            this.plugin.getLogger().warning("Missing key '" + key + "' in resource bundle for locale: "
-                    + this.localBundle.getLocale());
+            plugin.getLogger().warning("Missing key '" + key + "' in resource bundle for locale: "
+                    + localBundle.getLocale());
         }
 
-        return this.defaultBundle.getString(key);
+        return defaultBundle.getString(key);
     }
 
     /**
@@ -135,9 +134,9 @@ public final class I18n {
             try {
                 return MessageFormat.format(format, arguments);
             } catch (IllegalArgumentException ex) {
-                this.plugin.getLogger().log(Level.WARNING, "Illegal message format for key: " + key, ex);
+                plugin.getLogger().log(Level.WARNING, "Illegal message format for key: " + key, ex);
                 try {
-                    return MessageFormat.format(format.replaceAll("\\{(\\D*?)}", "\\[$1\\]"), arguments);
+                    return MessageFormat.format(format.replaceAll("\\{(\\D*?)}", "[$1]"), arguments);
                 } catch (IllegalArgumentException ignored) { }
             }
         }
@@ -151,7 +150,7 @@ public final class I18n {
      * @return true if it has a message for the key, false otherwise.
      */
     public boolean contains(@NotNull String key) {
-        return this.defaultBundle.containsKey(key);
+        return defaultBundle.containsKey(key);
     }
 
     /**
@@ -191,13 +190,11 @@ public final class I18n {
 
         @Override
         public @Nullable URL getResource(@NotNull String name) {
-            File file = new File(this.directory, name);
+            File file = new File(directory, name);
             if (file.exists()) {
                 try {
                     return file.toURI().toURL();
-                } catch (MalformedURLException ignored) {
-
-                }
+                } catch (MalformedURLException ignored) { }
             }
 
             return null;
@@ -205,13 +202,11 @@ public final class I18n {
 
         @Override
         public @Nullable InputStream getResourceAsStream(@NotNull String name) {
-            File file = new File(this.directory, name);
+            File file = new File(directory, name);
             if (file.exists()) {
                 try {
                     return new FileInputStream(file);
-                } catch (FileNotFoundException ignored) {
-
-                }
+                } catch (FileNotFoundException ignored) { }
             }
 
             return null;

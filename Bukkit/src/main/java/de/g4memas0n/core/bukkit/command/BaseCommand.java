@@ -40,22 +40,22 @@ public abstract class BaseCommand<T extends JavaPlugin> extends SubCommand<T> im
     @Override
     public boolean register(@NotNull T plugin) {
         if (this.plugin == null) {
-            final PluginCommand command = plugin.getCommand(this.name);
+            final PluginCommand command = plugin.getCommand(name);
             if (command == null) {
-                plugin.getLogger().warning("Failed to register command '" + this.name + "'! Is it registered to bukkit/spigot?");
+                plugin.getLogger().warning("Could not register command '" + name + "'! Is it registered to bukkit/spigot?");
                 return false;
             }
 
-            if (this.commands != null) {
+            if (commands != null) {
                 SubCommand<T> subcommand;
 
-                for (Iterator<SubCommand<T>> iterator = this.commands.values().iterator(); iterator.hasNext();) {
+                for (Iterator<SubCommand<T>> iterator = commands.values().iterator(); iterator.hasNext();) {
                     if (!(subcommand = iterator.next()).register(plugin) && subcommand.plugin == null) {
                         // There could be a BasicCommand that could not be registered. In this case, its subcommands
                         // are also not registered, so we cannot use this command. Therefore, the command is removed to
                         // reduce potential errors. Note that the absence of the plugin reference is checked, as the
                         // command may already be registered.
-                        plugin.getLogger().warning("Failed to register subcommand '" + subcommand.name + "' for command '" + this.name + "'!");
+                        plugin.getLogger().warning("Failed to register subcommand '" + subcommand.name + "' for command '" + name + "'!");
                         iterator.remove();
                     }
                 }
@@ -73,18 +73,18 @@ public abstract class BaseCommand<T extends JavaPlugin> extends SubCommand<T> im
     @Override
     public boolean unregister(@NotNull T plugin) {
         if (this.plugin == plugin) {
-            final PluginCommand command = plugin.getCommand(this.name);
+            final PluginCommand command = plugin.getCommand(name);
             if (command != null) {
                 command.setTabCompleter(null);
                 command.setExecutor(null);
             }
 
-            if (this.commands != null) {
-                for (SubCommand<T> subcommand : this.commands.values()) {
+            if (commands != null) {
+                for (SubCommand<T> subcommand : commands.values()) {
                     if (!subcommand.unregister(plugin) && subcommand.plugin != null) {
                         // This should not be the case, but if so a warning message should be logged. Note that the
                         // presence of the plugin reference is checked, as the command may already be unregistered.
-                        plugin.getLogger().warning("Failed to unregister subcommand '" + subcommand.name + "' for command '" + this.name + "'!");
+                        plugin.getLogger().warning("Failed to unregister subcommand '" + subcommand.name + "' for command '" + name + "'!");
                     }
                 }
             }
@@ -102,12 +102,12 @@ public abstract class BaseCommand<T extends JavaPlugin> extends SubCommand<T> im
      * @return true if it has been registered, false otherwise.
      */
     public boolean register(@NotNull SubCommand<T> command) {
-        Preconditions.checkState(this.plugin == null);
-        if (this.commands == null) {
-            this.commands = new HashMap<>();
+        Preconditions.checkState(plugin == null);
+        if (commands == null) {
+            commands = new HashMap<>();
         }
 
-        return this.commands.putIfAbsent(command.getName(), command) == null;
+        return commands.putIfAbsent(command.getName(), command) == null;
     }
 
     /**
@@ -116,10 +116,10 @@ public abstract class BaseCommand<T extends JavaPlugin> extends SubCommand<T> im
      * @return true if it has been unregistered, false otherwise.
      */
     public boolean unregister(@NotNull SubCommand<T> command) {
-        Preconditions.checkState(this.plugin == null);
-        if (this.commands != null && this.commands.remove(command.getName(), command)) {
-            if (this.commands.isEmpty()) {
-                this.commands = null;
+        Preconditions.checkState(plugin == null);
+        if (commands != null && commands.remove(command.getName(), command)) {
+            if (commands.isEmpty()) {
+                commands = null;
             }
             return true;
         }
@@ -146,7 +146,7 @@ public abstract class BaseCommand<T extends JavaPlugin> extends SubCommand<T> im
 
     @Override
     public @Nullable String getDescription() {
-        return this.plugin != null ? getDescription(this.plugin.getCommand(this.name)) : super.getDescription();
+        return plugin != null ? getDescription(plugin.getCommand(name)) : super.getDescription();
     }
 
     /**
@@ -167,7 +167,7 @@ public abstract class BaseCommand<T extends JavaPlugin> extends SubCommand<T> im
 
     @Override
     public @Nullable String getUsage() {
-        return this.plugin != null ? getUsage(this.plugin.getCommand(this.name)) : super.getUsage();
+        return plugin != null ? getUsage(plugin.getCommand(name)) : super.getUsage();
     }
 
     @Override
@@ -185,8 +185,8 @@ public abstract class BaseCommand<T extends JavaPlugin> extends SubCommand<T> im
 
         SubCommand<T> subcommand = null;
 
-        if (this.commands != null && arguments.length > 0) {
-            subcommand = this.commands.get(arguments[0].toLowerCase(Locale.ROOT));
+        if (commands != null && arguments.length > 0) {
+            subcommand = commands.get(arguments[0].toLowerCase(Locale.ROOT));
 
             if (subcommand != null && (subcommand.permission == null || sender.hasPermission(subcommand.permission))) {
                 if (subcommand.execute(sender, arguments[0], Arrays.copyOfRange(arguments, 1, arguments.length))) {
@@ -230,8 +230,8 @@ public abstract class BaseCommand<T extends JavaPlugin> extends SubCommand<T> im
             return Collections.emptyList();
         }
 
-        if (this.commands != null && arguments.length > 1) {
-            SubCommand<T> subcommand = this.commands.get(arguments[0].toLowerCase(Locale.ROOT));
+        if (commands != null && arguments.length > 1) {
+            SubCommand<T> subcommand = commands.get(arguments[0].toLowerCase(Locale.ROOT));
 
             if (subcommand != null && (subcommand.permission == null || sender.hasPermission(subcommand.permission))) {
                 String[] args = Arrays.copyOfRange(arguments, 1, arguments.length);
@@ -240,8 +240,8 @@ public abstract class BaseCommand<T extends JavaPlugin> extends SubCommand<T> im
         }
 
         List<String> completions = new ArrayList<>();
-        if (arguments.length == 1 && this.commands != null) {
-            for (SubCommand<T> subcommand : this.commands.values()) {
+        if (arguments.length == 1 && commands != null) {
+            for (SubCommand<T> subcommand : commands.values()) {
                 if (subcommand.permission == null || sender.hasPermission(subcommand.permission)) {
                     if (StringUtil.startsWithIgnoreCase(subcommand.getName(), arguments[0])) {
                         completions.add(subcommand.getName());
