@@ -32,7 +32,6 @@ public class MySQLConnector extends HikariConnector {
             }
 
             properties.setProperty("driverClassName", driver.getName());
-            properties.setProperty("dataSourceClassName", null);
         }
 
         // Setup jdbcUrl by using the data source properties if not already set
