@@ -72,6 +72,10 @@ public class BaseConfiguration extends YamlConfiguration {
     public void load() {
         try (InputStream stream = plugin.getResource(config.getName())) {
             if (stream != null) {
+                if (config.mkdirs()) {
+                    plugin.getLogger().fine("Created plugin directory " + config.getParentFile().getName());
+                }
+
                 if (!config.exists()) {
                     plugin.getLogger().info("Creating config file from template: " + config.getName());
                     Files.copy(stream, config.toPath());
