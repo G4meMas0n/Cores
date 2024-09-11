@@ -36,7 +36,7 @@ public class SQLiteConnector extends FlatFileConnector {
         try {
             Class.forName("org.sqlite.JDBC");
         } catch (ClassNotFoundException ex) {
-            logger.warning("Failed to find sqlite driver");
+            logger.warning("Could not find sqlite driver");
             throw new RuntimeException(ex);
         }
 

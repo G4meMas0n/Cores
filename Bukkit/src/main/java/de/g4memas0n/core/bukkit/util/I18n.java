@@ -49,14 +49,14 @@ public final class I18n {
      * @param locale the new bundle locale.
      */
     public void load(@NotNull Locale locale) {
-        plugin.getLogger().info("Loading resource bundle for locale: " + locale);
+        plugin.getLogger().info("Loading resource bundle for locale " + locale);
 
         try {
             localBundle = ResourceBundle.getBundle(defaultBundle.getBaseBundleName(), locale);
 
             if (!localBundle.getLocale().equals(locale)) {
-                plugin.getLogger().warning("Resource bundle for locale " + locale
-                        + " could not be found. Using fallback locale: " + localBundle.getLocale());
+                plugin.getLogger().warning("Could not find resource bundle for locale " + locale
+                        + ". Using fallback locale " + localBundle.getLocale());
             }
         } catch (MissingResourceException ex) {
             plugin.getLogger().log(Level.WARNING, "Failed to find resource bundle! Using default resource bundle", ex);
@@ -65,7 +65,7 @@ public final class I18n {
         try {
             customBundle = ResourceBundle.getBundle(defaultBundle.getBaseBundleName(), locale,
                     classLoader, Control.getNoFallbackControl(Control.FORMAT_PROPERTIES));
-            plugin.getLogger().info("Found custom resource bundle for locale: " + locale);
+            plugin.getLogger().info("Found custom resource bundle for locale " + locale);
         } catch (MissingResourceException ignored) { }
 
         plugin.getLogger().info("Locale has been changed. Using locale " + locale());
@@ -106,8 +106,7 @@ public final class I18n {
         try {
             return localBundle.getString(key);
         } catch (MissingResourceException ex) {
-            plugin.getLogger().warning("Missing key '" + key + "' in resource bundle for locale: "
-                    + localBundle.getLocale());
+            plugin.getLogger().warning("Missing key '" + key + "' in resource bundle for locale " + localBundle.getLocale());
         }
 
         return defaultBundle.getString(key);
@@ -134,7 +133,7 @@ public final class I18n {
             try {
                 return MessageFormat.format(format, arguments);
             } catch (IllegalArgumentException ex) {
-                plugin.getLogger().log(Level.WARNING, "Illegal message format for key: " + key, ex);
+                plugin.getLogger().log(Level.WARNING, "Illegal message format for key " + key, ex);
                 try {
                     return MessageFormat.format(format.replaceAll("\\{(\\D*?)}", "[$1]"), arguments);
                 } catch (IllegalArgumentException ignored) { }

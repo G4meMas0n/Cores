@@ -43,11 +43,11 @@ public class BaseConfiguration extends YamlConfiguration {
      * @param config the config file.
      */
     public BaseConfiguration(@NotNull Plugin plugin, @NotNull File config) {
+        if (!plugin.getDataFolder().mkdirs()) {
+            throw new IllegalStateException("Failed to create data folder");
+        }
         this.plugin = plugin;
         this.config = config;
-        if (plugin.getDataFolder().mkdirs()) {
-            plugin.getLogger().fine("Created plugin directory " + plugin.getDataFolder().getName());
-        }
     }
 
     /**
@@ -62,7 +62,7 @@ public class BaseConfiguration extends YamlConfiguration {
         try {
             Files.delete(config.toPath());
         } catch (IOException ex) {
-            plugin.getLogger().log(Level.SEVERE, "Failed to delete config file " + config.getName(), ex);
+            plugin.getLogger().log(Level.WARNING, "Failed to delete config file " + config.getName(), ex);
         }
     }
 
@@ -103,7 +103,7 @@ public class BaseConfiguration extends YamlConfiguration {
         } catch (FileNotFoundException ex) {
             plugin.getLogger().log(Level.WARNING, "Could not find config file " + config.getName(), ex);
         } catch (IOException ex) {
-            plugin.getLogger().log(Level.SEVERE, "Failed to load config file: " + config.getName(), ex);
+            plugin.getLogger().log(Level.WARNING, "Failed to load config file: " + config.getName(), ex);
         }
     }
 

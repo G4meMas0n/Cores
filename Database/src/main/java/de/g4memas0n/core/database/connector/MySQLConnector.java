@@ -24,14 +24,15 @@ public class MySQLConnector extends HikariConnector {
             } catch (ClassNotFoundException ignored) {
                 try {
                     driver = Class.forName("com.mysql.jdbc.Driver");
-                    logger.warning("Failed to find MySQL driver, falling back to legacy driver");
+                    logger.warning("Could not find modern mysql driver, falling back to legacy driver");
                 } catch (ClassNotFoundException ex) {
-                    logger.warning("Failed to find MySQL driver");
+                    logger.warning("Could not find any mysql driver");
                     throw new RuntimeException("driver not available", ex);
                 }
             }
 
             properties.setProperty("driverClassName", driver.getName());
+            properties.remove("dataSourceClassName");
         }
 
         // Setup jdbcUrl by using the data source properties if not already set

@@ -40,21 +40,14 @@ public class HikariConnector implements IConnector {
             }
         });
 
-        try {
-            logger.fine("Configuring hikari connection");
-            PropertyElf.setTargetFromProperties(config, configProperties);
-            config.setAutoCommit(true);
-
-            dataSource = new HikariDataSource(config);
-        } catch (RuntimeException ex) {
-            logger.warning("Failed to configure Hikari connection: " + ex.getMessage());
-        }
+        PropertyElf.setTargetFromProperties(config, configProperties);
+        config.setAutoCommit(true);
+        dataSource = new HikariDataSource(config);
     }
 
     @Override
     public void shutdown() {
         if (dataSource != null) {
-            logger.fine("Shutting down hikari connection");
             dataSource.close();
         }
     }
@@ -62,7 +55,7 @@ public class HikariConnector implements IConnector {
     @Override
     public @NotNull Connection getConnection() throws SQLException {
         if (dataSource == null) {
-            throw new SQLException("No database connection available");
+            throw new SQLException("Database connection unavailable");
         }
         return dataSource.getConnection();
     }
