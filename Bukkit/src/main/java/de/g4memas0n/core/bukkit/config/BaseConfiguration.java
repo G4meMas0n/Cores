@@ -43,9 +43,7 @@ public class BaseConfiguration extends YamlConfiguration {
      * @param config the config file.
      */
     public BaseConfiguration(@NotNull Plugin plugin, @NotNull File config) {
-        if (!plugin.getDataFolder().mkdirs()) {
-            throw new IllegalStateException("Failed to create data folder");
-        }
+        config.getParentFile().mkdirs();
         this.plugin = plugin;
         this.config = config;
     }
