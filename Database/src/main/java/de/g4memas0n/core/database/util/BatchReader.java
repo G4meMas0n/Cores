@@ -21,6 +21,7 @@ public final class BatchReader {
 
     /**
      * Reads the batch file for the given path and loads it to the given statement.
+     * @param statement the statement to add the queries to.
      * @param path the path of the batch file.
      * @return the count of the batch statement.
      * @throws IllegalArgumentException if the file is not visible to the class loader.
@@ -40,6 +41,7 @@ public final class BatchReader {
 
     /**
      * Reads the batch file from the given stream and loads it to the given statement.
+     * @param statement the statement to add the queries to.
      * @param stream the stream to read from.
      * @return the count of the batch statement.
      * @throws IOException if an I/O error occurs.

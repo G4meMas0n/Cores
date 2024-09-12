@@ -13,6 +13,9 @@ import java.util.logging.Logger;
 @SuppressWarnings("unused")
 public abstract class FlatFileConnector implements IConnector {
 
+    /**
+     * Logger instance used by the implementing flat-file connectors.
+     */
     public static Logger logger = Logger.getLogger(FlatFileConnector.class.getName());
     private Connection connection;
     private final Path path;

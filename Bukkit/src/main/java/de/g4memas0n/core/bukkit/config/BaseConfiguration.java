@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
@@ -43,24 +44,22 @@ public class BaseConfiguration extends YamlConfiguration {
      * @param config the config file.
      */
     public BaseConfiguration(@NotNull Plugin plugin, @NotNull File config) {
-        config.getParentFile().mkdirs();
         this.plugin = plugin;
         this.config = config;
     }
 
     /**
      * Deletes the config file of the configuration.
+     * @throws IOException if an I/O error occurs.
      */
-    public void delete() {
-        if (!config.exists()) {
-            plugin.getLogger().log(Level.WARNING, "Could not find config file " + config.getName());
-            return;
-        }
-
+    public void delete() throws IOException {
         try {
             Files.delete(config.toPath());
+        } catch (NoSuchFileException ex) {
+            plugin.getLogger().log(Level.WARNING, "Could not find config file " + config.getName());
         } catch (IOException ex) {
             plugin.getLogger().log(Level.WARNING, "Failed to delete config file " + config.getName(), ex);
+            throw ex;
         }
     }
 
@@ -69,15 +68,16 @@ public class BaseConfiguration extends YamlConfiguration {
      * <p>
      * If the configuration file does not exist and the plugin jar contains a template, the configuration file will be
      * created with the template.
+     * @throws IOException if an I/O error occurs.
      */
-    public void load() {
+    public void load() throws IOException {
         try (InputStream stream = plugin.getResource(config.getName())) {
             if (stream != null) {
                 if (!config.exists()) {
-                    plugin.getLogger().info("Creating config file from template: " + config.getName());
+                    plugin.getLogger().info("Saving config from template file " + config.getName());
+                    Files.createDirectories(config.getParentFile().toPath());
                     Files.copy(stream, config.toPath());
                 }
-
                 setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(stream)));
             }
         } catch (IOException ex) {
@@ -93,26 +93,30 @@ public class BaseConfiguration extends YamlConfiguration {
             if (!broken.exists() || broken.delete()) {
                 if (config.renameTo(broken)) {
                     plugin.getLogger().log(Level.WARNING, "Broken config file " + config.getName() + ", renaming it to " + broken.getName(), ex.getCause());
-                    return;
+                } else {
+                    plugin.getLogger().log(Level.WARNING, "Broken config file " + config.getName(), ex.getCause());
                 }
             }
-
-            plugin.getLogger().log(Level.WARNING, "Broken config file " + config.getName(), ex.getCause());
+            throw new IOException("Invalid configuration file", ex);
         } catch (FileNotFoundException ex) {
             plugin.getLogger().log(Level.WARNING, "Could not find config file " + config.getName(), ex);
+            throw ex;
         } catch (IOException ex) {
             plugin.getLogger().log(Level.WARNING, "Failed to load config file: " + config.getName(), ex);
+            throw ex;
         }
     }
 
     /**
      * Saves the config file of the configuration.
+     * @throws IOException if an I/O error occurs.
      */
-    public void save() {
+    public void save() throws IOException {
         try {
             save(config);
         } catch (IOException ex) {
-            plugin.getLogger().log(Level.SEVERE, "Failed to save config file: " + config.getName(), ex);
+            plugin.getLogger().log(Level.WARNING, "Failed to save config file: " + config.getName(), ex);
+            throw ex;
         }
     }
 

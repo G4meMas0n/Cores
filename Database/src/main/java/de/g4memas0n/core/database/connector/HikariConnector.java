@@ -18,6 +18,9 @@ import java.util.logging.Logger;
 @SuppressWarnings("unused")
 public class HikariConnector implements IConnector {
 
+    /**
+     * Logger instance used by the implementing hikari connectors.
+     */
     public static Logger logger = Logger.getLogger(HikariConnector.class.getName());
     private HikariDataSource dataSource;
 
