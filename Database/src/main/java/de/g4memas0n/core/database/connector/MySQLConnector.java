@@ -6,7 +6,7 @@ import java.util.Properties;
 /**
  * A mysql database connector.
  * @see HikariConnector
- * @see IConnector
+ * @see Connector
  */
 @SuppressWarnings("unused")
 public class MySQLConnector extends HikariConnector {

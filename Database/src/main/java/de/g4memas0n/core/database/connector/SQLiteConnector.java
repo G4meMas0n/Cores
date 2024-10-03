@@ -10,7 +10,7 @@ import java.util.Properties;
 /**
  * A sqlite database connector.
  * @see FlatFileConnector
- * @see IConnector
+ * @see Connector
  */
 @SuppressWarnings("unused")
 public class SQLiteConnector extends FlatFileConnector {

@@ -68,8 +68,7 @@ public final class BatchReader {
                 // Check for ending statements
                 while ((index = line.indexOf(";")) >= 0) {
                     query.append(line.substring(0, index).stripLeading());
-
-                    if (query.length() > 0) {
+                    if (!query.isEmpty()) {
                         statement.addBatch(query.toString());
                         query.setLength(0);
                         count++;
@@ -136,8 +135,7 @@ public final class BatchReader {
                 // Check for ending statements
                 while ((index = line.indexOf(";")) >= 0) {
                     query.append(line.substring(0, index).stripLeading());
-
-                    if (query.length() > 0) {
+                    if (!query.isEmpty()) {
                         statements.add(query.toString());
                         query.setLength(0);
                     }

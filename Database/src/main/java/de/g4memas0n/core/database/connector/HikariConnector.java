@@ -13,10 +13,10 @@ import java.util.logging.Logger;
 
 /**
  * A database connector that connects through HikariCP.
- * @see IConnector
+ * @see Connector
  */
 @SuppressWarnings("unused")
-public class HikariConnector implements IConnector {
+public class HikariConnector implements Connector {
 
     /**
      * Logger instance used by the implementing hikari connectors.
@@ -58,20 +58,20 @@ public class HikariConnector implements IConnector {
     @Override
     public @NotNull Connection getConnection() throws SQLException {
         if (dataSource == null) {
-            throw new SQLException("Database connection unavailable");
+            throw new SQLException("Datasource not configured");
         }
         return dataSource.getConnection();
     }
 
     @Override
     public boolean isWrapperFor(@NotNull Class<?> type) {
-        return IConnector.class.equals(type) || DataSource.class.isAssignableFrom(type);
+        return Connector.class.equals(type) || DataSource.class.isAssignableFrom(type);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <T> T unwrap(@NotNull Class<T> type) throws SQLException {
-        if (IConnector.class.equals(type)) {
+        if (Connector.class.equals(type)) {
             return (T) this;
         } else if (HikariDataSource.class.isAssignableFrom(type) || DataSource.class.isAssignableFrom(type)) {
             return (T) dataSource;

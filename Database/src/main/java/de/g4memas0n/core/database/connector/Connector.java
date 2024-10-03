@@ -10,7 +10,7 @@ import java.util.Properties;
  * An interface for connecting to a database.
  */
 @SuppressWarnings("unused")
-public interface IConnector extends Wrapper {
+public interface Connector extends Wrapper {
 
     /**
      * Configures the database connector with the given properties.

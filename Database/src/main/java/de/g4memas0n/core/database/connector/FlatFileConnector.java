@@ -8,10 +8,10 @@ import java.util.logging.Logger;
 
 /**
  * An abstract database connector for connecting to a file based database.
- * @see IConnector
+ * @see Connector
  */
 @SuppressWarnings("unused")
-public abstract class FlatFileConnector implements IConnector {
+public abstract class FlatFileConnector implements Connector {
 
     /**
      * Logger instance used by the implementing flat-file connectors.
@@ -64,13 +64,13 @@ public abstract class FlatFileConnector implements IConnector {
 
     @Override
     public boolean isWrapperFor(@NotNull Class<?> type) {
-        return IConnector.class.equals(type) || Connection.class.isAssignableFrom(type);
+        return Connector.class.equals(type) || Connection.class.isAssignableFrom(type);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <T> T unwrap(@NotNull Class<T> type) throws SQLException {
-        if (IConnector.class.equals(type)) {
+        if (Connector.class.equals(type)) {
             return (T) this;
         } else if (Connection.class.isAssignableFrom(type)) {
             return (T) getConnection();
