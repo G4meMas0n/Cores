@@ -11,10 +11,10 @@ import java.util.Objects;
 
 /**
  * An abstract subcommand class to extend.
- * @param <T> the main class of the plugin.
+ * @param <P> the main class of the plugin.
  */
 @SuppressWarnings("unused")
-public abstract class SubCommand<T extends JavaPlugin> {
+public abstract class SubCommand<P extends JavaPlugin> {
 
     protected final String name;
     protected final String permission;
@@ -22,7 +22,7 @@ public abstract class SubCommand<T extends JavaPlugin> {
     /**
      * The reference to the plugin main class instance.
      */
-    protected T plugin;
+    protected P plugin;
 
     private String description;
     private String usage;
@@ -42,7 +42,7 @@ public abstract class SubCommand<T extends JavaPlugin> {
      * @param plugin the instance to the plugin main class.
      * @return true if it has been registered, false otherwise.
      */
-    public boolean register(@NotNull T plugin) {
+    public boolean register(@NotNull P plugin) {
         if (this.plugin == null) {
             this.plugin = plugin;
             return true;
@@ -56,7 +56,7 @@ public abstract class SubCommand<T extends JavaPlugin> {
      * @param plugin the instance to the plugin main class.
      * @return true if it has been unregistered, false otherwise.
      */
-    public boolean unregister(@NotNull T plugin) {
+    public boolean unregister(@NotNull P plugin) {
         if (this.plugin == plugin) {
             this.plugin = null;
             return true;
@@ -76,7 +76,7 @@ public abstract class SubCommand<T extends JavaPlugin> {
     /**
      * Returns the description of the subcommand.
      * <p>
-     * If the set description matches a key in the {@link de.g4memas0n.core.bukkit.util.I18n translation class}, it will be translated. Otherwise, it
+     * If the set description matches a key in the {@link I18n translation class}, it will be translated. Otherwise, it
      * will be returned immediately.
      * @return the command description or null.
      */
@@ -170,7 +170,7 @@ public abstract class SubCommand<T extends JavaPlugin> {
 
     @Override
     public @NotNull String toString() {
-        return getClass().getSimpleName() + "{name='" + name + "', permission='" + permission + "}";
+        return getClass().getSimpleName() + "{name='" + name + '\''  + ", permission='" + permission + '\'' + '}';
     }
 
     @Override
@@ -179,11 +179,10 @@ public abstract class SubCommand<T extends JavaPlugin> {
             return true;
         }
 
-        if (!(object instanceof SubCommand<?>)) {
+        if (!(object instanceof SubCommand<?> other)) {
             return false;
         }
 
-        SubCommand<?> other = (SubCommand<?>) object;
         return name.equals(other.name) && Objects.equals(permission, other.permission);
     }
 

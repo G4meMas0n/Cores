@@ -9,22 +9,22 @@ import java.lang.reflect.Method;
 
 /**
  * An abstract listener class to extend for listening to bukkit events.
- * @param <T> the main class of the plugin.
+ * @param <P> the main class of the plugin.
  */
 @SuppressWarnings("unused")
-public abstract class BaseListener<T extends JavaPlugin> implements Listener {
+public abstract class BaseListener<P extends JavaPlugin> implements Listener {
 
     /**
      * The reference to the plugin main class instance.
      */
-    protected T plugin;
+    protected P plugin;
 
     /**
      * Registers the implementing listener to bukkit.
      * @param plugin the instance to the plugin main class.
      * @return true if it has been registered, false otherwise.
      */
-    public boolean register(@NotNull T plugin) {
+    public boolean register(@NotNull P plugin) {
         if (this.plugin == null) {
             this.plugin = plugin;
             this.plugin.getServer().getPluginManager().registerEvents(this, plugin);
@@ -39,7 +39,7 @@ public abstract class BaseListener<T extends JavaPlugin> implements Listener {
      * @param plugin the instance to the plugin main class.
      * @return true if it has been unregistered, false otherwise.
      */
-    public boolean unregister(@NotNull T plugin) {
+    public boolean unregister(@NotNull P plugin) {
         if (this.plugin == plugin) {
             HandlerList.unregisterAll(this);
 
