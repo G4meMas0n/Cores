@@ -17,11 +17,6 @@ public class MySQLConnector extends HikariConnector {
     }
 
     @Override
-    public boolean isRemote() {
-        return true;
-    }
-
-    @Override
     public void configure(@NotNull Properties properties) {
         /*
          * Setup MySQL driver instead of data source as noted in:
@@ -45,15 +40,7 @@ public class MySQLConnector extends HikariConnector {
 
         // Setup jdbcUrl by using the data source properties if not already set
         if (properties.getProperty("jdbcUrl") == null) {
-            String databaseName = properties.getProperty("databaseName");
-            String serverName = properties.getProperty("serverName");
-            String portNumber = properties.getProperty("portNumber");
-
-            if (databaseName == null || serverName == null || portNumber == null) {
-                throw new IllegalArgumentException("serverName, portNumber and databaseName required");
-            }
-
-            properties.setProperty("jdbcUrl", "jdbc:mysql://" + serverName + ":" + portNumber + "/" + databaseName);
+            properties.setProperty("jdbcUrl", createUrl(properties));
         }
 
         /*
@@ -71,5 +58,17 @@ public class MySQLConnector extends HikariConnector {
         properties.setProperty("dataSource.elideSetAutoCommits", "true");
         properties.setProperty("dataSource.maintainTimeStats", "false");
         super.configure(properties);
+    }
+
+    public @NotNull String createUrl(@NotNull Properties properties) {
+        if (!properties.contains("serverName") || !properties.contains("databaseName")) {
+            throw new IllegalArgumentException("serverName and databaseName required");
+        }
+
+        String databaseName = properties.getProperty("databaseName");
+        String serverName = properties.getProperty("serverName");
+        String portNumber = properties.getProperty("portNumber");
+        if (portNumber == null || portNumber.equals("0")) portNumber = "3306";
+        return "jdbc:" + getVendorName().toLowerCase() + "://" + serverName + ":" + portNumber + "/" + databaseName;
     }
 }

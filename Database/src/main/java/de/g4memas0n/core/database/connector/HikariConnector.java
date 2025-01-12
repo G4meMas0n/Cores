@@ -25,6 +25,11 @@ public abstract class HikariConnector implements Connector {
     private HikariDataSource dataSource;
 
     @Override
+    public boolean isRemote() {
+        return true;
+    }
+
+    @Override
     public void configure(@NotNull Properties properties) {
         HikariConfig config = new HikariConfig();
         Properties configProperties = new Properties();

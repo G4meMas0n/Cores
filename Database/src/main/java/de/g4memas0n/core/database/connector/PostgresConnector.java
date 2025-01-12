@@ -17,11 +17,6 @@ public class PostgresConnector extends HikariConnector {
     }
 
     @Override
-    public boolean isRemote() {
-        return true;
-    }
-
-    @Override
     public void configure(@NotNull Properties properties) {
         Class<?> dataSource;
         try {
