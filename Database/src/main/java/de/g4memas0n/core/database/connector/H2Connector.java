@@ -5,38 +5,33 @@ import java.nio.file.Path;
 import java.util.Properties;
 
 /**
- * A sqlite database connector.
+ * A h2 database connector.
  * @see FlatFileConnector
  * @see Connector
  */
 @SuppressWarnings("unused")
-public class SQLiteConnector extends FlatFileConnector {
+public class H2Connector extends FlatFileConnector {
 
     /**
-     * Constructs a sqlite database connector.
+     * Constructs a h2 database connector.
      * @param path the path to the database file.
      * @see FlatFileConnector
      */
-    public SQLiteConnector(@NotNull Path path) {
+    public H2Connector(@NotNull Path path) {
         super(path);
     }
 
     @Override
     public @NotNull String getVendorName() {
-        return "SQLite";
+        return "H2";
     }
 
     @Override
     public void configure(@NotNull Properties properties) {
-        // Set default encoding to UTF-8
-        if (properties.getProperty("encoding") == null) {
-            properties.setProperty("encoding", "UTF-8");
-        }
-
         try {
-            Class.forName("org.sqlite.JDBC");
+            Class.forName("org.h2.Driver");
         } catch (ClassNotFoundException ex) {
-            logger.warning("Could not find sqlite driver");
+            logger.warning("Could not find h2 driver");
             throw new RuntimeException("driver not available", ex);
         }
 
@@ -45,6 +40,6 @@ public class SQLiteConnector extends FlatFileConnector {
 
     @Override
     public @NotNull String createUrl(@NotNull Path path) {
-        return "jdbc:sqlite:" + path;
+        return "jdbc:h2:file:" + path;
     }
 }

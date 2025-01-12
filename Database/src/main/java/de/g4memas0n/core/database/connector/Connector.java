@@ -13,6 +13,18 @@ import java.util.Properties;
 public interface Connector extends Wrapper {
 
     /**
+     * Gets the vendor name of the connector implementation.
+     * @return the database vendor name.
+     */
+    @NotNull String getVendorName();
+
+    /**
+     * Gets whether this connector connects to a remote database server.
+     * @return true, if it is a remote database connector.
+     */
+    boolean isRemote();
+
+    /**
      * Configures the database connector with the given properties.
      * @param properties the driver or data source properties.
      */

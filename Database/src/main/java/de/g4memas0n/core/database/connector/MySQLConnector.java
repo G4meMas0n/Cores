@@ -12,28 +12,36 @@ import java.util.Properties;
 public class MySQLConnector extends HikariConnector {
 
     @Override
+    public @NotNull String getVendorName() {
+        return "MySQL";
+    }
+
+    @Override
+    public boolean isRemote() {
+        return true;
+    }
+
+    @Override
     public void configure(@NotNull Properties properties) {
         /*
          * Setup MySQL driver instead of data source as noted in:
          * https://github.com/brettwooldridge/HikariCP/tree/dev
          */
-        if (properties.getProperty("driverClassName") == null) {
-            Class<?> driver;
+        Class<?> driver;
+        try {
+            driver = Class.forName("com.mysql.cj.jdbc.Driver");
+        } catch (ClassNotFoundException ignored) {
             try {
-                driver = Class.forName("com.mysql.cj.jdbc.Driver");
-            } catch (ClassNotFoundException ignored) {
-                try {
-                    driver = Class.forName("com.mysql.jdbc.Driver");
-                    logger.warning("Could not find modern mysql driver, falling back to legacy driver");
-                } catch (ClassNotFoundException ex) {
-                    logger.warning("Could not find any mysql driver");
-                    throw new RuntimeException("driver not available", ex);
-                }
+                driver = Class.forName("com.mysql.jdbc.Driver");
+                logger.warning("Could not find modern mysql driver, falling back to legacy driver");
+            } catch (ClassNotFoundException ex) {
+                logger.warning("Could not find any mysql driver");
+                throw new RuntimeException("driver not available", ex);
             }
-
-            properties.setProperty("driverClassName", driver.getName());
-            properties.remove("dataSourceClassName");
         }
+
+        properties.setProperty("driverClassName", driver.getName());
+        properties.remove("dataSourceClassName");
 
         // Setup jdbcUrl by using the data source properties if not already set
         if (properties.getProperty("jdbcUrl") == null) {
@@ -42,7 +50,7 @@ public class MySQLConnector extends HikariConnector {
             String portNumber = properties.getProperty("portNumber");
 
             if (databaseName == null || serverName == null || portNumber == null) {
-                throw new IllegalArgumentException("databaseName or serverName or portNumber is null");
+                throw new IllegalArgumentException("serverName, portNumber and databaseName required");
             }
 
             properties.setProperty("jdbcUrl", "jdbc:mysql://" + serverName + ":" + portNumber + "/" + databaseName);
@@ -62,7 +70,6 @@ public class MySQLConnector extends HikariConnector {
         properties.setProperty("dataSource.cacheServerConfiguration", "true");
         properties.setProperty("dataSource.elideSetAutoCommits", "true");
         properties.setProperty("dataSource.maintainTimeStats", "false");
-
         super.configure(properties);
     }
 }

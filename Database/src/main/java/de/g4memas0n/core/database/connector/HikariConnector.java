@@ -16,7 +16,7 @@ import java.util.logging.Logger;
  * @see Connector
  */
 @SuppressWarnings("unused")
-public class HikariConnector implements Connector {
+public abstract class HikariConnector implements Connector {
 
     /**
      * Logger instance used by the implementing hikari connectors.
