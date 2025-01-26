@@ -16,6 +16,7 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.ResourceBundle.Control;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A class providing access to translated messages.
@@ -23,9 +24,9 @@ import java.util.logging.Level;
 @SuppressWarnings("unused")
 public final class I18n {
 
+    private static Logger logger = Logger.getLogger(I18n.class.getName());
     private static I18n instance;
 
-    private final Plugin plugin;
     private final ClassLoader classLoader;
     private final ResourceBundle defaultBundle;
     private ResourceBundle customBundle;
@@ -33,42 +34,41 @@ public final class I18n {
 
     /**
      * Constructs a new translation class with the given plugin and bundle basename.
-     * @param plugin the plugin to which the class belongs to.
-     * @param bundle the basename of the resource bundle.
+     * @param plugin the plugin to which the class belongs to
+     * @param bundle the basename of the resource bundle
      */
     public I18n(@NotNull Plugin plugin, @NotNull String bundle) {
-        this.plugin = plugin;
-        this.classLoader = new CustomFileClassLoader(plugin.getClass().getClassLoader(), plugin.getDataFolder());
-        this.defaultBundle = ResourceBundle.getBundle(bundle);
-        this.localBundle = this.defaultBundle;
-        this.customBundle = null;
+        classLoader = new CustomFileClassLoader(plugin.getClass().getClassLoader(), plugin.getDataFolder());
+        defaultBundle = ResourceBundle.getBundle(bundle);
+        localBundle = defaultBundle;
+        customBundle = null;
+        logger = plugin.getLogger();
     }
 
     /**
      * Loads the resource bundles for the given locale.
-     * @param locale the new bundle locale.
+     * @param locale the new bundle locale
      */
     public void load(@NotNull Locale locale) {
-        plugin.getLogger().info("Loading resource bundle for locale " + locale);
+        logger.info("Loading resource bundle for locale " + locale);
 
         try {
             localBundle = ResourceBundle.getBundle(defaultBundle.getBaseBundleName(), locale);
-
             if (!localBundle.getLocale().equals(locale)) {
-                plugin.getLogger().warning("Could not find resource bundle for locale " + locale
+                logger.warning("Could not find resource bundle for locale " + locale
                         + ". Using fallback locale " + localBundle.getLocale());
             }
         } catch (MissingResourceException ex) {
-            plugin.getLogger().log(Level.WARNING, "Failed to find resource bundle! Using default resource bundle", ex);
+            logger.log(Level.WARNING, "Failed to find resource bundle! Using default resource bundle", ex);
         }
 
         try {
             customBundle = ResourceBundle.getBundle(defaultBundle.getBaseBundleName(), locale,
                     classLoader, Control.getNoFallbackControl(Control.FORMAT_PROPERTIES));
-            plugin.getLogger().info("Found custom resource bundle for locale " + locale);
+            logger.info("Found custom resource bundle for locale " + locale);
         } catch (MissingResourceException ignored) { }
 
-        plugin.getLogger().info("Locale has been changed. Using locale " + locale());
+        logger.info("Locale has been changed. Using locale " + locale());
         instance = this;
     }
 
@@ -85,7 +85,7 @@ public final class I18n {
 
     /**
      * Returns the current locale of the loaded resource bundles.
-     * @return the current bundle locale.
+     * @return the current bundle locale
      */
     public @NotNull Locale locale() {
         return customBundle != null ? customBundle.getLocale() : localBundle.getLocale();
@@ -93,8 +93,8 @@ public final class I18n {
 
     /**
      * Translates the message for the given key into the currently loaded locale.
-     * @param key the key of the message to translate.
-     * @return the translated message.
+     * @param key the key of the message to translate
+     * @return the translated message
      */
     public @NotNull String translate(@NotNull String key) {
         if (customBundle != null) {
@@ -106,7 +106,7 @@ public final class I18n {
         try {
             return localBundle.getString(key);
         } catch (MissingResourceException ex) {
-            plugin.getLogger().warning("Missing key '" + key + "' in resource bundle for locale " + localBundle.getLocale());
+            logger.warning("Missing key '" + key + "' in resource bundle for locale " + localBundle.getLocale());
         }
 
         return defaultBundle.getString(key);
@@ -115,17 +115,16 @@ public final class I18n {
     /**
      * Translates the message for the given key into the currently loaded locale and formats it with the given
      * arguments.
-     * @param key the key of the message to translate.
-     * @param arguments the arguments to use for formatting.
-     * @return the translated and formatted message.
+     * @param key the key of the message to translate
+     * @param arguments the arguments to use for formatting
+     * @return the translated and formatted message
      */
     public @NotNull String format(@NotNull String key, @NotNull Object... arguments) {
         String format = translate(key);
 
         if (arguments.length > 0) {
             for (int index = 0; index < arguments.length; index++) {
-                if (arguments[index] instanceof Enum<?>) {
-                    Enum<?> value = (Enum<?>) arguments[index];
+                if (arguments[index] instanceof Enum<?> value) {
                     arguments[index] = value.name().charAt(0) + value.name().substring(1).toLowerCase();
                 }
             }
@@ -133,7 +132,7 @@ public final class I18n {
             try {
                 return MessageFormat.format(format, arguments);
             } catch (IllegalArgumentException ex) {
-                plugin.getLogger().log(Level.WARNING, "Illegal message format for key " + key, ex);
+                logger.log(Level.WARNING, "Illegal message format for key " + key, ex);
                 try {
                     return MessageFormat.format(format.replaceAll("\\{(\\D*?)}", "[$1]"), arguments);
                 } catch (IllegalArgumentException ignored) { }
@@ -145,8 +144,8 @@ public final class I18n {
 
     /**
      * Checks whether the translation class has a message associated with the given key.
-     * @param key the key of the message to check.
-     * @return true if it has a message for the key, false otherwise.
+     * @param key the key of the message to check
+     * @return true if it has a message for the key, false otherwise
      */
     public boolean contains(@NotNull String key) {
         return defaultBundle.containsKey(key);
@@ -155,9 +154,9 @@ public final class I18n {
     /**
      * Translated the message for the given key using the last loaded translation class and format it with the given
      * arguments.
-     * @param key key the key of the message to translate.
-     * @param arguments the arguments to use for formatting.
-     * @return the translated and formatted message.
+     * @param key key the key of the message to translate
+     * @param arguments the arguments to use for formatting
+     * @return the translated and formatted message
      * @see #format(String, Object...)
      */
     public static @NotNull String tl(@NotNull String key, @NotNull Object... arguments) {
@@ -167,8 +166,8 @@ public final class I18n {
 
     /**
      * Checks whether the last loaded translation class has a message associated with the given key.
-     * @param key the key of the message to check.
-     * @return true if it has a message for the key, false otherwise.
+     * @param key the key of the message to check
+     * @return true if it has a message for the key, false otherwise
      * @see #contains(String)
      */
     public static boolean has(@NotNull String key) {

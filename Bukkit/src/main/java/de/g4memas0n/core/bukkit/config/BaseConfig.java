@@ -3,7 +3,6 @@ package de.g4memas0n.core.bukkit.config;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -15,107 +14,131 @@ import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * An extended class for the bukkit configuration.
+ * An extended class for the bukkit yaml configuration.
  */
 @SuppressWarnings("unused")
-public class BaseConfiguration extends YamlConfiguration {
+public class BaseConfig extends YamlConfiguration {
 
-    protected final Plugin plugin;
-    protected final File config;
+    public static Logger logger = Logger.getLogger(BaseConfig.class.getName());
+    private final Path path;
+    private String template;
 
     /**
-     * Constructs a new BaseConfiguration for the given plugin and filename.
-     * @param plugin the plugin main class.
-     * @param file the name of the config file.
+     * Construct a new yaml configuration for the given config file.
+     * @param path the path of the config file
      */
-    public BaseConfiguration(@NotNull Plugin plugin, @NotNull String file) {
-        this(plugin, new File(plugin.getDataFolder(), file));
+    public BaseConfig(@NotNull Path path) {
+        this.path = path;
     }
 
     /**
-     * Constructs a new BaseConfiguration for the given plugin and file.
-     * @param plugin the plugin main class.
-     * @param config the config file.
+     * Construct a new yaml configuration for the config file in the given directory.
+     * @param parent the path to the directory in which the config file is located
+     * @param config the name of the config file
      */
-    public BaseConfiguration(@NotNull Plugin plugin, @NotNull File config) {
-        this.plugin = plugin;
-        this.config = config;
+    public BaseConfig(@NotNull Path parent, @NotNull String config) {
+        this.path = parent.resolve(config);
     }
 
     /**
-     * Deletes the config file of the configuration.
-     * @throws IOException if an I/O error occurs.
+     * Constructs a new yaml configuration for the given config file.
+     * @param config the config file
+     */
+    public BaseConfig(@NotNull File config) {
+        this.path = config.toPath();
+    }
+
+    /**
+     * Construct a new yaml configuration for the config file in the given directory.
+     * @param parent the directory in which the config file is located
+     * @param config the name of the config file
+     */
+    public BaseConfig(@NotNull File parent, @NotNull String config) {
+        this.path = parent.toPath().resolve(config);
+    }
+
+    /*
+     *
+     */
+
+    /**
+     * Deletes the file of the yaml configuration.
+     * @throws FileNotFoundException if the file does not exist
+     * @throws IOException if an I/O error occurs
      */
     public void delete() throws IOException {
         try {
-            Files.delete(config.toPath());
+            Files.delete(path);
         } catch (NoSuchFileException ex) {
-            plugin.getLogger().log(Level.WARNING, "Could not find config file " + config.getName());
+            logger.warning("Could not find config file " + path.getFileName());
+            throw new FileNotFoundException(ex.getMessage());
         } catch (IOException ex) {
-            plugin.getLogger().log(Level.WARNING, "Failed to delete config file " + config.getName(), ex);
+            logger.log(Level.WARNING, "Failed to delete config file " + path.getFileName(), ex);
             throw ex;
         }
     }
 
     /**
-     * Loads the config file of the configuration.
+     * Loads the file of the yaml configuration.
      * <p>
-     * If the configuration file does not exist and the plugin jar contains a template, the configuration file will be
-     * created with the template.
-     * @throws IOException if an I/O error occurs.
+     * If the file does not exist and the plugin jar contains a template file, a new file will be created based on the
+     * found template.
+     * @throws FileNotFoundException if the file does not exist
+     * @throws IOException if an I/O error occurs
      */
     public void load() throws IOException {
-        try (InputStream stream = plugin.getResource(config.getName())) {
+        String templateName = template == null ? path.getFileName().toString() : template;
+        try (InputStream stream = BaseConfig.class.getClassLoader().getResourceAsStream(templateName)) {
             if (stream != null) {
-                if (!config.exists()) {
-                    plugin.getLogger().info("Saving config from template file " + config.getName());
-                    Files.createDirectories(config.getParentFile().toPath());
-                    Files.copy(stream, config.toPath());
+                if (Files.notExists(path)) {
+                    logger.info("Saving default config from template file " + templateName);
+                    Files.createDirectories(path.getParent());
+                    Files.copy(stream, path);
                 }
                 setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(stream)));
             }
         } catch (IOException ex) {
-            if (!config.exists()) {
-                plugin.getLogger().log(Level.WARNING, "Failed to read/write template file " + config.getName(), ex);
-            }
+            logger.log(Level.WARNING, "Failed to read/write template file " + templateName, ex);
         }
 
         try {
-            load(config);
+            load(path.toFile());
         } catch (InvalidConfigurationException ex) {
-            File broken = new File(config.getParentFile(), config.getName().replaceAll("(?i)(yml)$", "broken.$1"));
-            if (!broken.exists() || broken.delete()) {
-                if (config.renameTo(broken)) {
-                    plugin.getLogger().log(Level.WARNING, "Broken config file " + config.getName() + ", renaming it to " + broken.getName(), ex.getCause());
-                } else {
-                    plugin.getLogger().log(Level.WARNING, "Broken config file " + config.getName(), ex.getCause());
-                }
+            String brokenName = path.getFileName().toString().replaceAll("(?i)(yml)$", "broken.$1");
+            try {
+                Files.move(path, path.resolveSibling(brokenName), StandardCopyOption.REPLACE_EXISTING);
+                logger.log(Level.WARNING, "Config file " + path.getFileName() + " is broken, renaming it to " + brokenName, ex);
+            } catch (IOException ignored) {
+                logger.log(Level.WARNING, "Config file " + path.getFileName() + " is broken and need to be fixed", ex);
             }
-            throw new IOException("Invalid configuration file", ex);
+            throw new IOException("Invalid configuration", ex);
         } catch (FileNotFoundException ex) {
-            plugin.getLogger().log(Level.WARNING, "Could not find config file " + config.getName(), ex);
+            logger.warning("Could not find config file " + path.getFileName());
             throw ex;
         } catch (IOException ex) {
-            plugin.getLogger().log(Level.WARNING, "Failed to load config file: " + config.getName(), ex);
+            logger.log(Level.WARNING, "Failed to load config file " + path.getFileName(), ex);
             throw ex;
         }
     }
 
     /**
-     * Saves the config file of the configuration.
-     * @throws IOException if an I/O error occurs.
+     * Saves the file of the yaml configuration.
+     * @throws IOException if an I/O error occurs
      */
     public void save() throws IOException {
         try {
-            save(config);
+            save(path.toFile());
         } catch (IOException ex) {
-            plugin.getLogger().log(Level.WARNING, "Failed to save config file: " + config.getName(), ex);
+            logger.log(Level.WARNING, "Failed to save config file " + path.getFileName(), ex);
             throw ex;
         }
     }
@@ -129,8 +152,8 @@ public class BaseConfiguration extends YamlConfiguration {
      * <p>
      * If the BigDecimal does not exist but a default value has been specified, this will return the default value. If
      * the BigDecimal does not exist and no default value was specified, this will return null.
-     * @param path the path of the BigDecimal to get.
-     * @return the requested BigDecimal.
+     * @param path the path of the BigDecimal to get
+     * @return the requested BigDecimal
      */
     @Nullable
     public BigDecimal getBigDecimal(@NotNull String path) {
@@ -142,9 +165,9 @@ public class BaseConfiguration extends YamlConfiguration {
      * <p>
      * If the BigDecimal does not exist then the specified default value will be returned regardless of if a default
      * has been identified in the root Configuration.
-     * @param path the path of the BigDecimal to get.
-     * @param def the default value to return if the path is not found or is not a BigDecimal.
-     * @return the requested BigDecimal.
+     * @param path the path of the BigDecimal to get
+     * @param def the default value to return if the path is not found or is not a BigDecimal
+     * @return the requested BigDecimal
      */
     @Contract("_, !null -> !null")
     @Nullable
@@ -157,9 +180,9 @@ public class BaseConfiguration extends YamlConfiguration {
      * <p>
      * If the BigDecimal does not exist but a default value has been specified, this will return the default value. If
      * the BigDecimal does not exist and no default value was specified, this will return null.
-     * @param section the section of the BigDecimal to get.
-     * @param path the path of the BigDecimal to get.
-     * @return the requested BigDecimal.
+     * @param section the section of the BigDecimal to get
+     * @param path the path of the BigDecimal to get
+     * @return the requested BigDecimal
      */
     @Nullable
     public BigDecimal getBigDecimal(@NotNull ConfigurationSection section, @NotNull String path) {
@@ -171,21 +194,25 @@ public class BaseConfiguration extends YamlConfiguration {
      * <p>
      * If the BigDecimal does not exist then the specified default value will be returned regardless of if a default
      * has been identified in the root Configuration.
-     * @param section the section of the BigDecimal to get.
-     * @param path the path of the BigDecimal to get.
-     * @param def the default value to return if the path is not found or is not a BigDecimal.
-     * @return the requested BigDecimal.
+     * @param section the section of the BigDecimal to get
+     * @param path the path of the BigDecimal to get
+     * @param def the default value to return if the path is not found or is not a BigDecimal
+     * @return the requested BigDecimal
      */
     @Contract("_, _, !null -> !null")
     @Nullable
     public BigDecimal getBigDecimal(@NotNull ConfigurationSection section, @NotNull String path,
                                     @Nullable BigDecimal def) {
         Object val = def == null ? section.get(path) : section.get(path, null);
-        if (val instanceof Number) {
-            try {
+        try {
+            if (val instanceof Long) {
+                return BigDecimal.valueOf((Long) val);
+            } else if (val instanceof Number) {
                 return BigDecimal.valueOf(((Number) val).doubleValue());
-            } catch (NumberFormatException ignored) { }
-        }
+            } else if (val instanceof String) {
+                return new BigDecimal((String) val);
+            }
+        } catch (NumberFormatException ignored) { }
         return def;
     }
 
@@ -194,8 +221,8 @@ public class BaseConfiguration extends YamlConfiguration {
      * <p>
      * If the Locale does not exist but a default value has been specified, this will return the default value. If
      * the Locale does not exist and no default value was specified, this will return null.
-     * @param path the path of the Locale to get.
-     * @return the requested Locale.
+     * @param path the path of the Locale to get
+     * @return the requested Locale
      */
     @Nullable
     public Locale getLocale(@NotNull String path) {
@@ -207,9 +234,9 @@ public class BaseConfiguration extends YamlConfiguration {
      * <p>
      * If the Locale does not exist then the specified default value will be returned regardless of if a default
      * has been identified in the root Configuration.
-     * @param path the path of the Locale to get.
-     * @param def the default value to return if the path is not found or is not a Locale.
-     * @return the requested Locale.
+     * @param path the path of the Locale to get
+     * @param def the default value to return if the path is not found or is not a Locale
+     * @return the requested Locale
      */
     @Contract("_, !null -> !null")
     @Nullable
@@ -222,9 +249,9 @@ public class BaseConfiguration extends YamlConfiguration {
      * <p>
      * If the Locale does not exist but a default value has been specified, this will return the default value. If
      * the Locale does not exist and no default value was specified, this will return null.
-     * @param section the section of the Locale to get.
-     * @param path the path of the Locale to get.
-     * @return the requested Locale.
+     * @param section the section of the Locale to get
+     * @param path the path of the Locale to get
+     * @return the requested Locale
      */
     @Nullable
     public Locale getLocale(@NotNull ConfigurationSection section, @NotNull String path) {
@@ -236,10 +263,10 @@ public class BaseConfiguration extends YamlConfiguration {
      * <p>
      * If the Locale does not exist then the specified default value will be returned regardless of if a default
      * has been identified in the root Configuration.
-     * @param section the section of the Locale to get.
-     * @param path the path of the Locale to get.
-     * @param def the default value to return if the path is not found or is not a Locale.
-     * @return the requested Locale.
+     * @param section the section of the Locale to get
+     * @param path the path of the Locale to get
+     * @param def the default value to return if the path is not found or is not a Locale
+     * @return the requested Locale
      */
     @Contract("_, _, !null -> !null")
     @Nullable
@@ -264,8 +291,8 @@ public class BaseConfiguration extends YamlConfiguration {
      * <p>
      * If the Properties do not exist but a default value has been specified, this will return the default value. If
      * the Properties do not exist and no default value was specified, this will return null.
-     * @param path the path of the Properties to get.
-     * @return the requested Properties.
+     * @param path the path of the Properties to get
+     * @return the requested Properties
      */
     @Nullable
     public Properties getProperties(@NotNull String path) {
@@ -277,9 +304,9 @@ public class BaseConfiguration extends YamlConfiguration {
      * <p>
      * If the Properties do not exist then the specified default value will be returned regardless of if a default
      * has been identified in the root Configuration.
-     * @param path the path of the Properties to get.
-     * @param def the default value to return if the path is not found or contains no Properties.
-     * @return the requested Properties.
+     * @param path the path of the Properties to get
+     * @param def the default value to return if the path is not found or contains no Properties
+     * @return the requested Properties
      */
     @Contract("_, !null -> !null")
     @Nullable
@@ -292,9 +319,9 @@ public class BaseConfiguration extends YamlConfiguration {
      * <p>
      * If the Properties do not exist but a default value has been specified, this will return the default value. If
      * the Properties do not exist and no default value was specified, this will return null.
-     * @param section the section of the Properties to get.
-     * @param path the path of the Properties to get.
-     * @return the requested Properties.
+     * @param section the section of the Properties to get
+     * @param path the path of the Properties to get
+     * @return the requested Properties
      */
     @Nullable
     public Properties getProperties(@NotNull ConfigurationSection section, @NotNull String path) {
@@ -306,10 +333,10 @@ public class BaseConfiguration extends YamlConfiguration {
      * <p>
      * If the Properties do not exist then the specified default value will be returned regardless of if a default
      * has been identified in the root Configuration.
-     * @param section the section of the Properties to get.
-     * @param path the path of the Properties to get.
-     * @param def the default value to return if the path is not found or contains no Properties.
-     * @return the requested Properties.
+     * @param section the section of the Properties to get
+     * @param path the path of the Properties to get
+     * @param def the default value to return if the path is not found or contains no Properties
+     * @return the requested Properties
      */
     @Contract("_, _, !null -> !null")
     @Nullable
@@ -334,10 +361,10 @@ public class BaseConfiguration extends YamlConfiguration {
      * <p>
      * If the Object does not exist but a default value has been specified, this will return the default value. If
      * the Object does not exist and no default value was specified, this will return null.
-     * @param path the path of the Object to get.
-     * @param clazz the type of {@link java.lang.Enum}.
-     * @return the requested Enum object.
-     * @param <E> the type of {@link java.lang.Enum}.
+     * @param path the path of the Object to get
+     * @param clazz the type of {@link java.lang.Enum}
+     * @return the requested Enum object
+     * @param <E> the type of {@link java.lang.Enum}
      */
     @Nullable
     public <E extends Enum<E>> E getEnum(@NotNull String path, @NotNull Class<E> clazz) {
@@ -349,11 +376,11 @@ public class BaseConfiguration extends YamlConfiguration {
      * <p>
      * If the Object does not exist then the specified default value will be returned regardless of if a default
      * has been identified in the root Configuration.
-     * @param path the path of the Object to get.
-     * @param clazz the type of {@link java.lang.Enum}.
-     * @param def  the default object to return if the object is not present at the path.
-     * @return the requested Enum object.
-     * @param <E> the type of {@link java.lang.Enum}.
+     * @param path the path of the Object to get
+     * @param clazz the type of {@link java.lang.Enum}
+     * @param def  the default object to return if the object is not present at the path
+     * @return the requested Enum object
+     * @param <E> the type of {@link java.lang.Enum}
      */
     @Contract("_, _, !null -> !null")
     @Nullable
@@ -366,11 +393,11 @@ public class BaseConfiguration extends YamlConfiguration {
      * <p>
      * If the Object does not exist but a default value has been specified, this will return the default value. If
      * the Object does not exist and no default value was specified, this will return null.
-     * @param section the section of the Object to get.
-     * @param path the path of the Object to get.
-     * @param clazz the type of {@link java.lang.Enum}.
-     * @return the requested Enum object.
-     * @param <E> the type of {@link java.lang.Enum}.
+     * @param section the section of the Object to get
+     * @param path the path of the Object to get
+     * @param clazz the type of {@link java.lang.Enum}
+     * @return the requested Enum object
+     * @param <E> the type of {@link java.lang.Enum}
      */
     @Nullable
     public <E extends Enum<E>> E getEnum(@NotNull ConfigurationSection section, @NotNull String path,
@@ -383,12 +410,12 @@ public class BaseConfiguration extends YamlConfiguration {
      * <p>
      * If the Object does not exist then the specified default value will be returned regardless of if a default
      * has been identified in the root Configuration.
-     * @param section the section of the Object to get.
-     * @param path the path of the Object to get.
-     * @param clazz the type of {@link java.lang.Enum}.
-     * @param def  the default object to return if the object is not present at the path.
-     * @return the requested Enum object.
-     * @param <E> the type of {@link java.lang.Enum}.
+     * @param section the section of the Object to get
+     * @param path the path of the Object to get
+     * @param clazz the type of {@link java.lang.Enum}
+     * @param def  the default object to return if the object is not present at the path
+     * @return the requested Enum object
+     * @param <E> the type of {@link java.lang.Enum}
      */
     @Contract("_, _, _, !null -> !null")
     @Nullable

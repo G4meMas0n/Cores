@@ -9,7 +9,7 @@ import java.lang.reflect.Method;
 
 /**
  * An abstract listener class to extend for listening to bukkit events.
- * @param <P> the main class of the plugin.
+ * @param <P> the main class of the plugin
  */
 @SuppressWarnings("unused")
 public abstract class BaseListener<P extends JavaPlugin> implements Listener {
@@ -57,7 +57,6 @@ public abstract class BaseListener<P extends JavaPlugin> implements Listener {
 
         for (Method method : getClass().getMethods()) {
             annotation = method.getAnnotation(EventHandler.class);
-
             if (annotation != null && method.getParameterCount() == 1) {
                 events.append("{class='").append(method.getParameterTypes()[0].getSimpleName()).append("', ");
                 events.append("priority='").append(annotation.priority()).append("'},");

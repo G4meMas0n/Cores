@@ -5,30 +5,35 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 
 /**
  * An abstract subcommand class to extend.
- * @param <P> the main class of the plugin.
+ *
+ * @param <P> the main class of the plugin
  */
 @SuppressWarnings("unused")
 public abstract class SubCommand<P extends JavaPlugin> {
 
-    protected final String name;
-    protected final String permission;
+    private static final Map<String, SubCommand<?>> registeredCommands = new HashMap<>();
+
+    private String name;
+    private String permission;
+    private String description;
+    private String usage;
 
     /**
      * The reference to the plugin main class instance.
      */
     protected P plugin;
 
-    private String description;
-    private String usage;
-
     /**
      * Constructs a new subcommand with the given name and permission.
+     *
      * @param name the name of the subcommand.
      * @param permission the permission for the subcommand or null.
      */
@@ -38,135 +43,189 @@ public abstract class SubCommand<P extends JavaPlugin> {
     }
 
     /**
-     * Registers the implementing subcommand.
-     * @param plugin the instance to the plugin main class.
-     * @return true if it has been registered, false otherwise.
+     * Checks whether the command is registered.
+     *
+     * @return true if the command is currently registered, false otherwise
      */
+    public boolean isRegistered() {
+        return registeredCommands.containsKey(name) && plugin != null;
+    }
+
+    /**
+     * Registers the implementing command.
+     *
+     * @param plugin the plugin instance
+     * @return true if the registration was successful, false otherwise
+     */
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean register(@NotNull P plugin) {
-        if (this.plugin == null) {
+        if (!isRegistered()) {
+            registeredCommands.put(name, this);
             this.plugin = plugin;
             return true;
         }
-
         return false;
     }
 
     /**
-     * Unregisters the implementing subcommand.
-     * @param plugin the instance to the plugin main class.
-     * @return true if it has been unregistered, false otherwise.
+     * Unregisters the implementing command.
+     *
+     * @param plugin the plugin instance
+     * @return true if the unregistration was successful, false otherwise
      */
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean unregister(@NotNull P plugin) {
-        if (this.plugin == plugin) {
+        if (isRegistered()) {
+            registeredCommands.remove(name);
             this.plugin = null;
             return true;
         }
-
         return false;
     }
 
     /**
-     * Returns the name of the subcommand.
-     * @return the command name.
+     * Returns the name of the command.
+     *
+     * @return the command name
      */
-    public final @NotNull String getName() {
-        return this.name;
+    public @NotNull String getName() {
+        return name;
     }
 
     /**
-     * Returns the description of the subcommand.
+     * Sets the name of the command.
      * <p>
-     * If the set description matches a key in the {@link I18n translation class}, it will be translated. Otherwise, it
+     * May only be used before registering the command. Will return true if the new name is set, and false if the
+     * command has already been registered.
+     *
+     * @param name the new command name
+     * @return true if the name change happened, false if the command was already registered
+     */
+    public boolean setName(@NotNull String name) {
+        if (!isRegistered()) {
+            this.name = name;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns the permission required to be able to perform the command.
+     *
+     * @return the command permission or null if none
+     */
+    public @Nullable String getPermission() {
+        return permission;
+    }
+
+    /**
+     * Sets the permission required to be able to perform the command.
+     *
+     * @param permission the new permission or null
+     */
+    public void setPermission(@Nullable String permission) {
+        this.permission = permission;
+    }
+
+    /**
+     * Returns the description of the command.
+     * <p>
+     * If the description matches a key in the {@link I18n translation class}, it will be translated. Otherwise, it
      * will be returned immediately.
-     * @return the command description or null.
+     *
+     * @return the command description or null
      */
     public @Nullable String getDescription() {
-        if (this.description != null) {
-            return I18n.has(this.description) ? I18n.tl(this.description) : this.description;
+        if (description != null) {
+            return I18n.has(description) ? I18n.tl(description) : description;
         }
-
         return null;
     }
 
     /**
-     * Checks whether a description was set for the subcommand.
-     * @return true if a description was set, false otherwise.
-     */
-    public boolean hasDescription() {
-        return this.description != null;
-    }
-
-    /**
-     * Sets the description for the subcommand.
-     * @param description the new description or null.
+     * Sets the description for the command.
+     *
+     * @param description the new description or null
      */
     public void setDescription(@Nullable String description) {
         this.description = description;
     }
 
     /**
-     * Returns the usage of the subcommand.
+     * Returns the usage of the command.
      * <p>
-     * If the set usage matches a key in the {@link I18n translation class}, it will be translated. Otherwise, it
-     * will be returned immediately.
-     * @return the command usage or null.
+     * If the usage matches a key in the {@link I18n translation class}, it will be translated. Otherwise, it will be
+     * returned immediately.
+     *
+     * @return the command usage or null
      */
     public @Nullable String getUsage() {
-        if (this.usage != null) {
-            return I18n.has(this.usage) ? I18n.tl(this.usage) : this.usage;
+        if (usage != null) {
+            return I18n.has(usage) ? I18n.tl(usage) : usage;
         }
-
         return null;
     }
 
     /**
-     * Checks whether a usage was set for the subcommand.
-     * @return true if a usage was set, false otherwise.
-     */
-    public boolean hasUsage() {
-        return this.usage != null;
-    }
-
-    /**
-     * Sets the usage for the subcommand.
-     * @param usage the new usage or null.
+     * Sets the usage for the command.
+     *
+     * @param usage the new usage or null
      */
     public void setUsage(@Nullable String usage) {
         this.usage = usage;
     }
 
     /**
-     * Executes this command for the given {@code sender} with the given {@code arguments}, returning its success.
+     * Executes the command for the given {@code sender} with the given {@code arguments}, returning its success.
      * <p>
      * Note:<br>
-     * This method gets only called if the command source ({@code sender}) is permitted to perform this command.
-     * This means that the implementation of this method is not required to check the permission for the given
-     * {@code sender}.<br>
+     * This method will only be called if the {@link CommandSender} is permitted to perform this command.
+     * The implementation is therefore not required to test the permission for the given {@code sender}.<br>
      * If the implementation of this method returns {@code false}, the description and usage of this command
-     * will be sent to the command source ({@code sender}).
+     * will be sent to the {@code sender}.
      *
-     * @param sender the source who executed the command.
-     * @param alias the alias that was used for the command.
-     * @param arguments the passed arguments of the sender.
-     * @return {@code true} if the execution was successful and valid.
+     * @param sender the source who executed the command
+     * @param alias the alias used for the command
+     * @param arguments the passed arguments to the command
+     * @return true if the execution was successful, false otherwise
      */
     public abstract boolean execute(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] arguments);
 
     /**
-     * Requests a list of possible completions for the last element in the given {@code arguments} if it gets executed
-     * by the given {@code sender}.
+     * Requests a list of tab-completions for the given command {@code arguments} if it gets executed by the given
+     * {@code sender}.
      * <p>
      * Note:<br>
-     * This method gets only called if the command source ({@code sender}) is permitted to perform this command.
-     * This means that the implementation of this method is not required to check the permission for the given
-     * {@code sender}.
+     * This method will only be called if the {@link CommandSender} is permitted to perform this command.
+     * The implementation is therefore not required to test the permission for the given {@code sender}.
      *
-     * @param sender the source who tab-completed the command.
-     * @param alias the alias that was used for the command.
-     * @param arguments the passed arguments of the sender, including the final partial argument to be completed.
-     * @return a list of possible completions for the final arguments.
+     * @param sender the source who tab-completed the command
+     * @param alias the alias used for the command
+     * @param arguments the passed arguments to the command, including the last partial argument to be completed
+     * @return a list of tab-completions for the given arguments
      */
     public abstract @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] arguments);
+
+    /**
+     * Tests whether the given {@link CommandSender} can perform the command.
+     * <p>
+     * No message is sent to the given sender.
+     *
+     * @param sender the sender to test
+     * @return true if the sender can use it, false otherwise
+     */
+    public boolean testPermission(@NotNull CommandSender sender) {
+        if (permission == null || permission.isEmpty()) {
+            return true;
+        }
+
+        for (String perm : permission.split(";")) {
+            if (sender.hasPermission(perm)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     @Override
     public @NotNull String toString() {
