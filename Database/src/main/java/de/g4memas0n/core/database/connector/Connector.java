@@ -3,6 +3,7 @@ package de.g4memas0n.core.database.connector;
 import org.jetbrains.annotations.NotNull;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.sql.Wrapper;
 import java.util.Properties;
 
@@ -23,6 +24,12 @@ public interface Connector extends Wrapper {
      * @return true, if it is a remote database connector.
      */
     boolean isRemote();
+
+    /**
+     * Gets whether this connector has been shut down or not.
+     * @return true, if the connector is shut down.
+     */
+    boolean isShutdown();
 
     /**
      * Configures the database connector with the given properties.
@@ -50,8 +57,17 @@ public interface Connector extends Wrapper {
     /**
      * Attempts to establish a connection to the database.
      * @return a connection to the database.
-     * @throws SQLException if a database access error occurs.
+     * @throws SQLException if a database error occurs.
      */
     @NotNull Connection getConnection() throws SQLException;
 
+    /**
+     * Attempts to get the current timestamp from the database.<br>
+     * Note that the default implementation uses the current system milliseconds to get the timestamp.
+     * @return the current database or system timestamp.
+     * @throws SQLException if a database error occurs.
+     */
+    default @NotNull Timestamp getTimestamp() throws SQLException {
+        return new Timestamp(System.currentTimeMillis());
+    }
 }

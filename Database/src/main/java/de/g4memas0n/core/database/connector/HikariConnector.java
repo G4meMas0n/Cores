@@ -30,6 +30,11 @@ public abstract class HikariConnector implements Connector {
     }
 
     @Override
+    public boolean isShutdown() {
+        return dataSource == null || dataSource.isClosed();
+    }
+
+    @Override
     public void configure(@NotNull Properties properties) {
         HikariConfig config = new HikariConfig();
         Properties configProperties = new Properties();
@@ -62,8 +67,8 @@ public abstract class HikariConnector implements Connector {
 
     @Override
     public @NotNull Connection getConnection() throws SQLException {
-        if (dataSource == null) {
-            throw new SQLException("Datasource not configured");
+        if (isShutdown()) {
+            throw new SQLException("Datasource not configured or shut down");
         }
         return dataSource.getConnection();
     }

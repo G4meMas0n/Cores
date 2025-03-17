@@ -38,20 +38,27 @@ public abstract class FlatFileConnector implements Connector {
     }
 
     @Override
+    public boolean isShutdown() {
+        return this.properties == null;
+    }
+
+    @Override
     public void configure(@NotNull Properties properties) {
         this.properties = properties;
         this.url = createUrl(path);
     }
 
     @Override
-    public void shutdown() { }
+    public void shutdown() {
+        this.properties = null;
+    }
 
     public abstract @NotNull String createUrl(@NotNull Path path);
 
     @Override
     public synchronized @NotNull Connection getConnection() throws SQLException {
-        if (url == null) {
-            url = createUrl(path);
+        if (isShutdown()) {
+            throw new SQLException("Connector not configured or shut down");
         }
         return DriverManager.getConnection(url, properties);
     }
