@@ -24,6 +24,7 @@ public class NonCloseableConnection implements Connection {
 
     /**
      * Actually closes the underlying connection by calling {@link #close()}.
+     * @throws SQLException if a database access error occurs.
      */
     public void shutdown() throws SQLException {
         delegate.close();

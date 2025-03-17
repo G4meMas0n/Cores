@@ -53,6 +53,11 @@ public abstract class FlatFileConnector implements Connector {
         this.properties = null;
     }
 
+    /**
+     * Creates a new jdbc-url for the given database path.
+     * @param path the path to the flat-file database.
+     * @return the created jdbc-url.
+     */
     public abstract @NotNull String createUrl(@NotNull Path path);
 
     @Override

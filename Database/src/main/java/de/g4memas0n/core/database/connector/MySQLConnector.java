@@ -60,7 +60,12 @@ public class MySQLConnector extends HikariConnector {
         super.configure(properties);
     }
 
-    public @NotNull String createUrl(@NotNull Properties properties) {
+    /**
+     * Creates a new jdbc-url for the given database properties.
+     * @param properties the database properties.
+     * @return the created jdbc-url.
+     */
+    protected @NotNull String createUrl(@NotNull Properties properties) {
         if (!properties.contains("serverName") || !properties.contains("databaseName")) {
             throw new IllegalArgumentException("serverName and databaseName required");
         }

@@ -28,6 +28,9 @@ import java.util.logging.Logger;
 @SuppressWarnings("unused")
 public class BaseConfig extends YamlConfiguration {
 
+    /**
+     * Logger instance used by the configs.
+     */
     public static Logger logger = Logger.getLogger(BaseConfig.class.getName());
     private final Path path;
     private String template;
