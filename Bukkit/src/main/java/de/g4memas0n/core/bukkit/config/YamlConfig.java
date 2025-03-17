@@ -6,7 +6,6 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,47 +25,27 @@ import java.util.logging.Logger;
  * An extended class for the bukkit yaml configuration.
  */
 @SuppressWarnings("unused")
-public class BaseConfig extends YamlConfiguration {
+public class YamlConfig extends YamlConfiguration {
 
     /**
      * Logger instance used by the configs.
      */
-    public static Logger logger = Logger.getLogger(BaseConfig.class.getName());
-    private final Path path;
-    private String template;
+    public static Logger logger = Logger.getLogger(YamlConfig.class.getName());
+    protected final String templatePath;
 
     /**
-     * Construct a new yaml configuration for the given config file.
-     * @param path the path of the config file
+     * Construct a new extended yaml configuration.
      */
-    public BaseConfig(@NotNull Path path) {
-        this.path = path;
+    public YamlConfig() {
+        this.templatePath = null;
     }
 
     /**
-     * Construct a new yaml configuration for the config file in the given directory.
-     * @param parent the path to the directory in which the config file is located
-     * @param config the name of the config file
+     * Construct a new extended yaml configuration with the given template path.
+     * @param template the path of the config template file
      */
-    public BaseConfig(@NotNull Path parent, @NotNull String config) {
-        this.path = parent.resolve(config);
-    }
-
-    /**
-     * Constructs a new yaml configuration for the given config file.
-     * @param config the config file
-     */
-    public BaseConfig(@NotNull File config) {
-        this.path = config.toPath();
-    }
-
-    /**
-     * Construct a new yaml configuration for the config file in the given directory.
-     * @param parent the directory in which the config file is located
-     * @param config the name of the config file
-     */
-    public BaseConfig(@NotNull File parent, @NotNull String config) {
-        this.path = parent.toPath().resolve(config);
+    public YamlConfig(@NotNull String template) {
+        this.templatePath = template;
     }
 
     /*
@@ -74,11 +53,11 @@ public class BaseConfig extends YamlConfiguration {
      */
 
     /**
-     * Deletes the file of the yaml configuration.
+     * Deletes the yaml configuration file at the given path.
      * @throws FileNotFoundException if the file does not exist
      * @throws IOException if an I/O error occurs
      */
-    public void delete() throws IOException {
+    public void delete(@NotNull Path path) throws IOException {
         try {
             Files.delete(path);
         } catch (NoSuchFileException ex) {
@@ -98,19 +77,19 @@ public class BaseConfig extends YamlConfiguration {
      * @throws FileNotFoundException if the file does not exist
      * @throws IOException if an I/O error occurs
      */
-    public void load() throws IOException {
-        String templateName = template == null ? path.getFileName().toString() : template;
-        try (InputStream stream = BaseConfig.class.getClassLoader().getResourceAsStream(templateName)) {
+    public void load(@NotNull Path path) throws IOException {
+        String template = templatePath == null ? path.getFileName().toString() : templatePath;
+        try (InputStream stream = YamlConfig.class.getClassLoader().getResourceAsStream(template)) {
             if (stream != null) {
                 if (Files.notExists(path)) {
-                    logger.info("Saving default config from template file " + templateName);
+                    logger.info("Saving default config from template file " + template);
                     Files.createDirectories(path.getParent());
                     Files.copy(stream, path);
                 }
                 setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(stream)));
             }
         } catch (IOException ex) {
-            logger.log(Level.WARNING, "Failed to read/write template file " + templateName, ex);
+            logger.log(Level.WARNING, "Failed to read/write template file " + template, ex);
         }
 
         try {
@@ -137,7 +116,7 @@ public class BaseConfig extends YamlConfiguration {
      * Saves the file of the yaml configuration.
      * @throws IOException if an I/O error occurs
      */
-    public void save() throws IOException {
+    public void save(@NotNull Path path) throws IOException {
         try {
             save(path.toFile());
         } catch (IOException ex) {
