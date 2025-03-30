@@ -3,9 +3,10 @@ package de.g4memas0n.core.database.connector;
 import org.jetbrains.annotations.NotNull;
 import java.nio.file.Path;
 import java.util.Properties;
+import java.util.logging.Level;
 
 /**
- * A h2 database connector.
+ * A H2 database connector.
  * @see FlatFileConnector
  * @see Connector
  */
@@ -13,7 +14,7 @@ import java.util.Properties;
 public class H2Connector extends FlatFileConnector {
 
     /**
-     * Constructs a h2 database connector.
+     * Constructs a H2 database connector.
      * @param path the path to the database file.
      * @see FlatFileConnector
      */
@@ -31,7 +32,7 @@ public class H2Connector extends FlatFileConnector {
         try {
             Class.forName("org.h2.Driver");
         } catch (ClassNotFoundException ex) {
-            logger.warning("Could not find h2 driver");
+            logger.log(Level.WARNING, "Could not load H2 driver", ex);
             throw new RuntimeException("driver not available", ex);
         }
 

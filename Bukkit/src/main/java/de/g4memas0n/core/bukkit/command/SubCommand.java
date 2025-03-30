@@ -10,16 +10,29 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.logging.Logger;
 
 /**
- * An abstract subcommand class to extend.
- *
+ * A base class to extend for all sub commands.
  * @param <P> the main class of the plugin
  */
 @SuppressWarnings("unused")
 public abstract class SubCommand<P extends JavaPlugin> {
 
-    private static final Map<String, SubCommand<?>> registeredCommands = new HashMap<>();
+    /**
+     * A map containing all successfully registered commands. May be useful for help commands.
+     */
+    protected static final Map<String, SubCommand<?>> registeredCommands = new HashMap<>();
+
+    /**
+     * The logger instance intended to be used by all implemented commands.
+     */
+    protected static Logger logger = Logger.getLogger(SubCommand.class.getPackageName());
+
+    /**
+     * The reference to the plugin main class instance.
+     */
+    protected P plugin;
 
     private String name;
     private String permission;
@@ -27,15 +40,17 @@ public abstract class SubCommand<P extends JavaPlugin> {
     private String usage;
 
     /**
-     * The reference to the plugin main class instance.
+     * Constructs a new command with the given name.
+     * @param name the name of the command
      */
-    protected P plugin;
+    public SubCommand(@NotNull String name) {
+        this(name, name);
+    }
 
     /**
-     * Constructs a new subcommand with the given name and permission.
-     *
-     * @param name the name of the subcommand.
-     * @param permission the permission for the subcommand or null.
+     * Constructs a new command with the given name and permission.
+     * @param name the name of the command
+     * @param permission the permission for the command or null
      */
     public SubCommand(@NotNull String name, @Nullable String permission) {
         this.name = name.toLowerCase(Locale.ROOT);
@@ -44,7 +59,6 @@ public abstract class SubCommand<P extends JavaPlugin> {
 
     /**
      * Checks whether the command is registered.
-     *
      * @return true if the command is currently registered, false otherwise
      */
     public boolean isRegistered() {
@@ -53,7 +67,6 @@ public abstract class SubCommand<P extends JavaPlugin> {
 
     /**
      * Registers the implementing command.
-     *
      * @param plugin the plugin instance
      * @return true if the registration was successful, false otherwise
      */
@@ -69,7 +82,6 @@ public abstract class SubCommand<P extends JavaPlugin> {
 
     /**
      * Unregisters the implementing command.
-     *
      * @param plugin the plugin instance
      * @return true if the unregistration was successful, false otherwise
      */
@@ -85,7 +97,6 @@ public abstract class SubCommand<P extends JavaPlugin> {
 
     /**
      * Returns the name of the command.
-     *
      * @return the command name
      */
     public @NotNull String getName() {
@@ -93,11 +104,9 @@ public abstract class SubCommand<P extends JavaPlugin> {
     }
 
     /**
-     * Sets the name of the command.
-     * <p>
+     * Sets the name of the command.<p>
      * May only be used before registering the command. Will return true if the new name is set, and false if the
      * command has already been registered.
-     *
      * @param name the new command name
      * @return true if the name change happened, false if the command was already registered
      */
@@ -111,7 +120,6 @@ public abstract class SubCommand<P extends JavaPlugin> {
 
     /**
      * Returns the permission required to be able to perform the command.
-     *
      * @return the command permission or null if none
      */
     public @Nullable String getPermission() {
@@ -119,20 +127,24 @@ public abstract class SubCommand<P extends JavaPlugin> {
     }
 
     /**
-     * Sets the permission required to be able to perform the command.
-     *
+     * Sets the permission required to be able to perform the command.<p>
+     * May only be used before registering the command. Will return true if the new permission is set, and false if the
+     * command has already been registered.
      * @param permission the new permission or null
+     * @return true if the permission change happened, false if the command was already registered
      */
-    public void setPermission(@Nullable String permission) {
-        this.permission = permission;
+    public boolean setPermission(@Nullable String permission) {
+        if (!isRegistered()) {
+            this.permission = permission;
+            return true;
+        }
+        return false;
     }
 
     /**
-     * Returns the description of the command.
-     * <p>
+     * Returns the description of the command.<p>
      * If the description matches a key in the {@link I18n translation class}, it will be translated. Otherwise, it
      * will be returned immediately.
-     *
      * @return the command description or null
      */
     public @Nullable String getDescription() {
@@ -144,7 +156,6 @@ public abstract class SubCommand<P extends JavaPlugin> {
 
     /**
      * Sets the description for the command.
-     *
      * @param description the new description or null
      */
     public void setDescription(@Nullable String description) {
@@ -152,11 +163,9 @@ public abstract class SubCommand<P extends JavaPlugin> {
     }
 
     /**
-     * Returns the usage of the command.
-     * <p>
+     * Returns the usage of the command.<p>
      * If the usage matches a key in the {@link I18n translation class}, it will be translated. Otherwise, it will be
      * returned immediately.
-     *
      * @return the command usage or null
      */
     public @Nullable String getUsage() {
@@ -168,7 +177,6 @@ public abstract class SubCommand<P extends JavaPlugin> {
 
     /**
      * Sets the usage for the command.
-     *
      * @param usage the new usage or null
      */
     public void setUsage(@Nullable String usage) {
@@ -176,8 +184,7 @@ public abstract class SubCommand<P extends JavaPlugin> {
     }
 
     /**
-     * Executes the command for the given {@code sender} with the given {@code arguments}, returning its success.
-     * <p>
+     * Executes the command for the given {@code sender} with the given {@code arguments}, returning its success.<p>
      * Note:<br>
      * This method will only be called if the {@link CommandSender} is permitted to perform this command.
      * The implementation is therefore not required to test the permission for the given {@code sender}.<br>
@@ -193,8 +200,7 @@ public abstract class SubCommand<P extends JavaPlugin> {
 
     /**
      * Requests a list of tab-completions for the given command {@code arguments} if it gets executed by the given
-     * {@code sender}.
-     * <p>
+     * {@code sender}.<p>
      * Note:<br>
      * This method will only be called if the {@link CommandSender} is permitted to perform this command.
      * The implementation is therefore not required to test the permission for the given {@code sender}.
@@ -207,10 +213,8 @@ public abstract class SubCommand<P extends JavaPlugin> {
     public abstract @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] arguments);
 
     /**
-     * Tests whether the given {@link CommandSender} can perform the command.
-     * <p>
+     * Tests whether the given {@link CommandSender} can perform the command.<p>
      * No message is sent to the given sender.
-     *
      * @param sender the sender to test
      * @return true if the sender can use it, false otherwise
      */
@@ -229,19 +233,15 @@ public abstract class SubCommand<P extends JavaPlugin> {
 
     @Override
     public @NotNull String toString() {
-        return getClass().getSimpleName() + "{name='" + name + '\''  + ", permission='" + permission + '\'' + '}';
+        return "SubCommand{name='" + name + '\''  + ", permission='" + permission + '\'' + '}';
     }
 
     @Override
     public boolean equals(@Nullable Object object) {
-        if (object == this) {
-            return true;
-        }
-
+        if (object == this) return true;
         if (!(object instanceof SubCommand<?> other)) {
             return false;
         }
-
         return name.equals(other.name) && Objects.equals(permission, other.permission);
     }
 

@@ -2,14 +2,15 @@ package de.g4memas0n.core.database.connector;
 
 import org.jetbrains.annotations.NotNull;
 import java.util.Properties;
+import java.util.logging.Level;
 
 /**
- * A postgres database connector.
+ * A PostgreSQL database connector.
  * @see HikariConnector
  * @see Connector
  */
 @SuppressWarnings("unused")
-public class PostgresConnector extends HikariConnector {
+public class PostgreSQLConnector extends HikariConnector {
 
     @Override
     public @NotNull String getVendorName() {
@@ -22,7 +23,7 @@ public class PostgresConnector extends HikariConnector {
         try {
             dataSource = Class.forName("org.postgresql.ds.PGSimpleDataSource");
         } catch (ClassNotFoundException ex) {
-            logger.warning("Could not find postgres driver");
+            logger.log(Level.WARNING, "Could not find PostgreSQL driver", ex);
             throw new RuntimeException("driver not available", ex);
         }
 

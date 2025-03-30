@@ -2,9 +2,10 @@ package de.g4memas0n.core.database.connector;
 
 import org.jetbrains.annotations.NotNull;
 import java.util.Properties;
+import java.util.logging.Level;
 
 /**
- * A mariadb database connector.
+ * A MariaDB database connector.
  * @see HikariConnector
  * @see MySQLConnector
  * @see Connector
@@ -23,7 +24,7 @@ public class MariaDBConnector extends MySQLConnector {
         try {
             driver = Class.forName("org.mariadb.jdbc.Driver");
         } catch (ClassNotFoundException ex) {
-            logger.warning("Could not find mariadb driver");
+            logger.log(Level.WARNING, "Could not load MariaDB driver", ex);
             throw new RuntimeException("driver not available", ex);
         }
 

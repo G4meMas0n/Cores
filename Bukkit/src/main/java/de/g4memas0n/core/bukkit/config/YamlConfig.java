@@ -28,25 +28,9 @@ import java.util.logging.Logger;
 public class YamlConfig extends YamlConfiguration {
 
     /**
-     * Logger instance used by the configs.
+     * The logger instance intended to be used by all configs.
      */
-    public static Logger logger = Logger.getLogger(YamlConfig.class.getName());
-    protected final String templatePath;
-
-    /**
-     * Construct a new extended yaml configuration.
-     */
-    public YamlConfig() {
-        this.templatePath = null;
-    }
-
-    /**
-     * Construct a new extended yaml configuration with the given template path.
-     * @param template the path of the config template file
-     */
-    public YamlConfig(@NotNull String template) {
-        this.templatePath = template;
-    }
+    public static Logger logger = Logger.getLogger(YamlConfig.class.getPackageName());
 
     /*
      *
@@ -54,14 +38,16 @@ public class YamlConfig extends YamlConfiguration {
 
     /**
      * Deletes the yaml configuration file at the given path.
+     * @param path the path to the config to delete
      * @throws FileNotFoundException if the file does not exist
      * @throws IOException if an I/O error occurs
      */
     public void delete(@NotNull Path path) throws IOException {
+        logger.fine("Deleting config file " + path.getFileName());
         try {
             Files.delete(path);
         } catch (NoSuchFileException ex) {
-            logger.warning("Could not find config file " + path.getFileName());
+            logger.log(Level.WARNING, "Could not find config file " + path.getFileName(), ex);
             throw new FileNotFoundException(ex.getMessage());
         } catch (IOException ex) {
             logger.log(Level.WARNING, "Failed to delete config file " + path.getFileName(), ex);
@@ -70,28 +56,31 @@ public class YamlConfig extends YamlConfiguration {
     }
 
     /**
-     * Loads the file of the yaml configuration.
-     * <p>
+     * Loads the file of the yaml configuration.<p>
      * If the file does not exist and the plugin jar contains a template file, a new file will be created based on the
      * found template.
+     * @param path the path to load the config from
      * @throws FileNotFoundException if the file does not exist
      * @throws IOException if an I/O error occurs
      */
     public void load(@NotNull Path path) throws IOException {
-        String template = templatePath == null ? path.getFileName().toString() : templatePath;
+        String template = path.getFileName().toString();
+        logger.fine("Searching for config template file " + template);
         try (InputStream stream = YamlConfig.class.getClassLoader().getResourceAsStream(template)) {
             if (stream != null) {
                 if (Files.notExists(path)) {
-                    logger.info("Saving default config from template file " + template);
+                    logger.fine("Saving config from template file " + template);
                     Files.createDirectories(path.getParent());
                     Files.copy(stream, path);
                 }
+                // Loading default values in case of missing entries in the config file
                 setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(stream)));
             }
         } catch (IOException ex) {
             logger.log(Level.WARNING, "Failed to read/write template file " + template, ex);
         }
 
+        logger.fine("Loading config file " + path.getFileName());
         try {
             load(path.toFile());
         } catch (InvalidConfigurationException ex) {
@@ -104,7 +93,7 @@ public class YamlConfig extends YamlConfiguration {
             }
             throw new IOException("Invalid configuration", ex);
         } catch (FileNotFoundException ex) {
-            logger.warning("Could not find config file " + path.getFileName());
+            logger.log(Level.WARNING, "Could not find config file " + path.getFileName(), ex);
             throw ex;
         } catch (IOException ex) {
             logger.log(Level.WARNING, "Failed to load config file " + path.getFileName(), ex);
@@ -114,9 +103,11 @@ public class YamlConfig extends YamlConfiguration {
 
     /**
      * Saves the file of the yaml configuration.
+     * @param path the path to save the config to
      * @throws IOException if an I/O error occurs
      */
     public void save(@NotNull Path path) throws IOException {
+        logger.fine("Saving config file " + path.getFileName());
         try {
             save(path.toFile());
         } catch (IOException ex) {

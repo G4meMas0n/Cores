@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 public abstract class FlatFileConnector implements Connector {
 
     /**
-     * Logger instance used by the implementing flat-file connectors.
+     * The logger instance intended to be used by all implemented flat-file connectors.
      */
     public static Logger logger = Logger.getLogger(FlatFileConnector.class.getName());
 
@@ -29,7 +29,7 @@ public abstract class FlatFileConnector implements Connector {
      * @param path the path to the database file.
      */
     public FlatFileConnector(@NotNull Path path) {
-        this.path = path;
+        this.path = path.toAbsolutePath();
     }
 
     @Override

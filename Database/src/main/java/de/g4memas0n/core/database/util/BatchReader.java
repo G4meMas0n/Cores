@@ -21,12 +21,12 @@ public final class BatchReader {
 
     /**
      * Reads the batch file for the given path and loads it to the given statement.
-     * @param statement the statement to add the queries to.
-     * @param path the path of the batch file.
-     * @return the count of the batch statement.
-     * @throws IllegalArgumentException if the file is not visible to the class loader.
-     * @throws IOException if an I/O error occurs.
-     * @throws SQLException if a database access error occurs.
+     * @param statement the statement to add the queries to
+     * @param path the path of the batch file
+     * @return the count of the batch statement
+     * @throws IllegalArgumentException if the file is not visible to the class loader
+     * @throws IOException if an I/O error occurs
+     * @throws SQLException if a database access error occurs
      */
     public static int readBatch(@NotNull Statement statement, @NotNull String path) throws IOException, SQLException {
         String file = path + (path.matches("\\.sql$") ? "" : ".sql");
@@ -41,11 +41,11 @@ public final class BatchReader {
 
     /**
      * Reads the batch file from the given stream and loads it to the given statement.
-     * @param statement the statement to add the queries to.
-     * @param stream the stream to read from.
-     * @return the count of the batch statement.
-     * @throws IOException if an I/O error occurs.
-     * @throws SQLException if a database access error occurs.
+     * @param statement the statement to add the queries to
+     * @param stream the stream to read from
+     * @return the count of the batch statement
+     * @throws IOException if an I/O error occurs
+     * @throws SQLException if a database access error occurs
      */
     public static int readBatch(@NotNull Statement statement, @NotNull InputStream stream) throws IOException, SQLException {
         int count = 0;
@@ -92,10 +92,10 @@ public final class BatchReader {
 
     /**
      * Reads the batch file for the given path.
-     * @param path the path of the batch file.
-     * @return a list of all batch statements.
-     * @throws IllegalArgumentException if the file is not visible to the class loader.
-     * @throws IOException if an I/O error occurs.
+     * @param path the path of the batch file
+     * @return a list of all batch statements
+     * @throws IllegalArgumentException if the file is not visible to the class loader
+     * @throws IOException if an I/O error occurs
      */
     public static @NotNull List<String> readBatch(@NotNull String path) throws IOException {
         String file = path + (path.matches("\\.sql$") ? "" : ".sql");
@@ -110,9 +110,9 @@ public final class BatchReader {
 
     /**
      * Reads the batch file from the given stream.
-     * @param stream the stream to read from.
-     * @return a list of all batch statements.
-     * @throws IOException if an I/O error occurs.
+     * @param stream the stream to read from
+     * @return a list of all batch statements
+     * @throws IOException if an I/O error occurs
      */
     public static @NotNull List<String> readBatch(@NotNull InputStream stream) throws IOException {
         List<String> statements = new LinkedList<>();

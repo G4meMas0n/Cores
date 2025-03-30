@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 @SuppressWarnings("unused")
 public final class I18n {
 
-    private static Logger logger = Logger.getLogger(I18n.class.getName());
+    private static final Logger logger = Logger.getLogger(I18n.class.getName());
     private static I18n instance;
 
     private final ClassLoader classLoader;
@@ -42,7 +42,12 @@ public final class I18n {
         defaultBundle = ResourceBundle.getBundle(bundle);
         localBundle = defaultBundle;
         customBundle = null;
-        logger = plugin.getLogger();
+
+        // Configure logger to use
+        if (logger.getParent() == null) {
+            logger.setParent(plugin.getLogger());
+            logger.setUseParentHandlers(true);
+        }
     }
 
     /**
@@ -50,8 +55,7 @@ public final class I18n {
      * @param locale the new bundle locale
      */
     public void load(@NotNull Locale locale) {
-        logger.info("Loading resource bundle for locale " + locale);
-
+        logger.fine("Loading resource bundle for locale " + locale);
         try {
             localBundle = ResourceBundle.getBundle(defaultBundle.getBaseBundleName(), locale);
             if (!localBundle.getLocale().equals(locale)) {
@@ -59,13 +63,14 @@ public final class I18n {
                         + ". Using fallback locale " + localBundle.getLocale());
             }
         } catch (MissingResourceException ex) {
-            logger.log(Level.WARNING, "Failed to find resource bundle! Using default resource bundle", ex);
+            logger.log(Level.WARNING, "Failed to find resource bundle. Using default resource bundle", ex);
         }
 
+        logger.fine("Searching custom resource bundle for locale " + locale);
         try {
             customBundle = ResourceBundle.getBundle(defaultBundle.getBaseBundleName(), locale,
                     classLoader, Control.getNoFallbackControl(Control.FORMAT_PROPERTIES));
-            logger.info("Found custom resource bundle for locale " + locale);
+            logger.fine("Found custom resource bundle for locale " + locale);
         } catch (MissingResourceException ignored) { }
 
         logger.info("Locale has been changed. Using locale " + locale());

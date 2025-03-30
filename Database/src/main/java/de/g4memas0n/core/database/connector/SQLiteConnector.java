@@ -3,9 +3,10 @@ package de.g4memas0n.core.database.connector;
 import org.jetbrains.annotations.NotNull;
 import java.nio.file.Path;
 import java.util.Properties;
+import java.util.logging.Level;
 
 /**
- * A sqlite database connector.
+ * A SQLite database connector.
  * @see FlatFileConnector
  * @see Connector
  */
@@ -13,7 +14,7 @@ import java.util.Properties;
 public class SQLiteConnector extends FlatFileConnector {
 
     /**
-     * Constructs a sqlite database connector.
+     * Constructs a SQLite database connector.
      * @param path the path to the database file.
      * @see FlatFileConnector
      */
@@ -36,7 +37,7 @@ public class SQLiteConnector extends FlatFileConnector {
         try {
             Class.forName("org.sqlite.JDBC");
         } catch (ClassNotFoundException ex) {
-            logger.warning("Could not find sqlite driver");
+            logger.log(Level.WARNING, "Could not load SQLite driver", ex);
             throw new RuntimeException("driver not available", ex);
         }
 

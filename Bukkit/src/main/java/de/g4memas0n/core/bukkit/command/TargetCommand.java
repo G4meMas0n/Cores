@@ -13,8 +13,7 @@ public interface TargetCommand<T> {
 
     /**
      * Executes the command for the given {@code sender} with the given {@code target} and {@code arguments},
-     * returning its success.
-     * <p>
+     * returning its success.<p>
      * Note:<br>
      * This method gets only called if the {@link CommandSender} is permitted to perform this command.
      * The implementation is therefore not required to test the permission for the given {@code sender}.<br>
@@ -31,8 +30,7 @@ public interface TargetCommand<T> {
 
     /**
      * Requests a list of tab-completions for the given {@code target} and the given command {@code arguments} if it
-     * gets executed by the given {@code sender}.
-     * <p>
+     * gets executed by the given {@code sender}.<p>
      * Note:<br>
      * This method gets only called if the {@link CommandSender} is permitted to perform this command.
      * The implementation is therefore not required to test the permission for the given {@code sender}.
@@ -44,4 +42,5 @@ public interface TargetCommand<T> {
      * @return a list of tab-completions for the given arguments
      */
     @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull T target, @NotNull String alias, @NotNull String[] arguments);
+
 }

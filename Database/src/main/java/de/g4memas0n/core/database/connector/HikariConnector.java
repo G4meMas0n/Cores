@@ -19,7 +19,7 @@ import java.util.logging.Logger;
 public abstract class HikariConnector implements Connector {
 
     /**
-     * Logger instance used by the implementing hikari connectors.
+     * The logger instance intended to be used by all implemented hikari connectors.
      */
     public static Logger logger = Logger.getLogger(HikariConnector.class.getName());
     private HikariDataSource dataSource;
