@@ -1,5 +1,6 @@
 package de.g4memas0n.core.database.connector;
 
+import de.g4memas0n.core.database.StatementProcessor;
 import org.jetbrains.annotations.NotNull;
 import java.nio.file.Path;
 import java.util.Properties;
@@ -25,6 +26,11 @@ public class SQLiteConnector extends FlatFileConnector {
     @Override
     public @NotNull String getVendorName() {
         return "SQLite";
+    }
+
+    @Override
+    public @NotNull StatementProcessor getStatementProcessor() {
+        return StatementProcessor.BACKTICK_PROCESSOR;
     }
 
     @Override

@@ -1,5 +1,6 @@
 package de.g4memas0n.core.database.connector;
 
+import de.g4memas0n.core.database.StatementProcessor;
 import org.jetbrains.annotations.NotNull;
 import java.nio.file.Path;
 import java.util.Properties;
@@ -13,6 +14,10 @@ import java.util.logging.Level;
 @SuppressWarnings("unused")
 public class H2Connector extends FlatFileConnector {
 
+    private static final StatementProcessor PROCESSOR = statement -> statement
+            .replace('\'', '`')
+            .replace("LIKE", "ILIKE");
+
     /**
      * Constructs a H2 database connector.
      * @param path the path to the database file.
@@ -25,6 +30,11 @@ public class H2Connector extends FlatFileConnector {
     @Override
     public @NotNull String getVendorName() {
         return "H2";
+    }
+
+    @Override
+    public @NotNull StatementProcessor getStatementProcessor() {
+        return PROCESSOR;
     }
 
     @Override

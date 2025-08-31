@@ -1,5 +1,6 @@
 package de.g4memas0n.core.database.connector;
 
+import de.g4memas0n.core.database.StatementProcessor;
 import org.jetbrains.annotations.NotNull;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -15,6 +16,11 @@ public class MySQLConnector extends HikariConnector {
     @Override
     public @NotNull String getVendorName() {
         return "MySQL";
+    }
+
+    @Override
+    public @NotNull StatementProcessor getStatementProcessor() {
+        return StatementProcessor.BACKTICK_PROCESSOR;
     }
 
     @Override

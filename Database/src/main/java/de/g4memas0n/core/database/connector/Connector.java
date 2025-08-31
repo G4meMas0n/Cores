@@ -1,5 +1,6 @@
 package de.g4memas0n.core.database.connector;
 
+import de.g4memas0n.core.database.StatementProcessor;
 import org.jetbrains.annotations.NotNull;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -60,6 +61,12 @@ public interface Connector extends Wrapper {
      * @throws SQLException if a database error occurs
      */
     @NotNull Connection getConnection() throws SQLException;
+
+    /**
+     * Gets the statement processor for this connector.
+     * @return the statement processor.
+     */
+    @NotNull StatementProcessor getStatementProcessor();
 
     /**
      * Attempts to get the current timestamp from the database.<br>
