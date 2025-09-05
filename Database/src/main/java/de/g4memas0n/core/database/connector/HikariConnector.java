@@ -55,13 +55,13 @@ public abstract class HikariConnector implements Connector {
 
         PropertyElf.setTargetFromProperties(config, configProperties);
         config.setAutoCommit(true);
-        dataSource = new HikariDataSource(config);
+        this.dataSource = new HikariDataSource(config);
     }
 
     @Override
     public void shutdown() {
-        if (dataSource != null) {
-            dataSource.close();
+        if (this.dataSource != null) {
+            this.dataSource.close();
         }
     }
 
@@ -70,7 +70,7 @@ public abstract class HikariConnector implements Connector {
         if (isShutdown()) {
             throw new SQLException("Datasource not configured or shut down");
         }
-        return dataSource.getConnection();
+        return this.dataSource.getConnection();
     }
 
     @Override
@@ -84,7 +84,7 @@ public abstract class HikariConnector implements Connector {
         if (Connector.class.equals(type)) {
             return (T) this;
         } else if (HikariDataSource.class.isAssignableFrom(type) || DataSource.class.isAssignableFrom(type)) {
-            return (T) dataSource;
+            return (T) this.dataSource;
         }
         throw new SQLException("Cannot unwrap to " + type);
     }

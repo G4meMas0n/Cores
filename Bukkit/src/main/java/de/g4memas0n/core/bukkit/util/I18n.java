@@ -33,9 +33,9 @@ public final class I18n {
     private ResourceBundle localBundle;
 
     /**
-     * Constructs a new translation class with the given plugin and bundle basename.
-     * @param plugin the plugin to which the class belongs to
-     * @param bundle the basename of the resource bundle
+     * Constructs a new translation class with the specified plugin and bundle basename.
+     * @param plugin the plugin to which the class belongs to.
+     * @param bundle the basename of the resource bundle.
      */
     public I18n(@NotNull Plugin plugin, @NotNull String bundle) {
         classLoader = new CustomFileClassLoader(plugin.getClass().getClassLoader(), plugin.getDataFolder());
@@ -51,8 +51,8 @@ public final class I18n {
     }
 
     /**
-     * Loads the resource bundles for the given locale.
-     * @param locale the new bundle locale
+     * Loads the resource bundles for the specified locale.
+     * @param locale the new bundle locale.
      */
     public void load(@NotNull Locale locale) {
         logger.fine("Loading resource bundle for locale " + locale);
@@ -90,16 +90,16 @@ public final class I18n {
 
     /**
      * Returns the current locale of the loaded resource bundles.
-     * @return the current bundle locale
+     * @return the current bundle locale.
      */
     public @NotNull Locale locale() {
         return customBundle != null ? customBundle.getLocale() : localBundle.getLocale();
     }
 
     /**
-     * Translates the message for the given key into the currently loaded locale.
-     * @param key the key of the message to translate
-     * @return the translated message
+     * Translates the message for the specified key into the currently loaded locale.
+     * @param key the key of the message to translate.
+     * @return the translated message.
      */
     public @NotNull String translate(@NotNull String key) {
         if (customBundle != null) {
@@ -118,11 +118,11 @@ public final class I18n {
     }
 
     /**
-     * Translates the message for the given key into the currently loaded locale and formats it with the given
+     * Translates the message for the given key into the currently loaded locale and formats it with the specified
      * arguments.
-     * @param key the key of the message to translate
-     * @param arguments the arguments to use for formatting
-     * @return the translated and formatted message
+     * @param key the key of the message to translate.
+     * @param arguments the arguments to use for formatting.
+     * @return the translated and formatted message.
      */
     public @NotNull String format(@NotNull String key, @NotNull Object... arguments) {
         String format = translate(key);
@@ -148,20 +148,20 @@ public final class I18n {
     }
 
     /**
-     * Checks whether the translation class has a message associated with the given key.
-     * @param key the key of the message to check
-     * @return true if it has a message for the key, false otherwise
+     * Checks whether the translation class has a message associated with the specified key.
+     * @param key the key of the message to check.
+     * @return true if it has a message for the key, false otherwise.
      */
     public boolean contains(@NotNull String key) {
         return defaultBundle.containsKey(key);
     }
 
     /**
-     * Translated the message for the given key using the last loaded translation class and format it with the given
-     * arguments.
-     * @param key key the key of the message to translate
-     * @param arguments the arguments to use for formatting
-     * @return the translated and formatted message
+     * Translated the message for the specified key using the last loaded translation class and format it with the
+     * specified arguments.
+     * @param key key the key of the message to translate.
+     * @param arguments the arguments to use for formatting.
+     * @return the translated and formatted message.
      * @see #format(String, Object...)
      */
     public static @NotNull String tl(@NotNull String key, @NotNull Object... arguments) {
@@ -170,9 +170,9 @@ public final class I18n {
     }
 
     /**
-     * Checks whether the last loaded translation class has a message associated with the given key.
-     * @param key the key of the message to check
-     * @return true if it has a message for the key, false otherwise
+     * Checks whether the last loaded translation class has a message associated with the specified key.
+     * @param key the key of the message to check.
+     * @return true if it has a message for the key, false otherwise.
      * @see #contains(String)
      */
     public static boolean has(@NotNull String key) {

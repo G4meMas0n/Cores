@@ -68,7 +68,7 @@ public class MySQLConnector extends HikariConnector {
     }
 
     /**
-     * Creates a new jdbc-url for the given database properties.
+     * Creates a new jdbc-url for the specified database properties.
      * @param properties the database properties.
      * @return the created jdbc-url.
      */

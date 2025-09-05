@@ -20,11 +20,11 @@ public interface TargetCommand<T> {
      * If the implementation of this method returns {@code false}, the description and usage of this command
      * will be sent to the {@code sender}.
      *
-     * @param sender the source who executed the command
-     * @param target the target object for the command
-     * @param alias the alias used for the command
-     * @param arguments the passed arguments to the command
-     * @return true if the execution was successful, false otherwise
+     * @param sender the source who executed the command.
+     * @param target the target object for the command.
+     * @param alias the alias used for the command.
+     * @param arguments the passed arguments to the command.
+     * @return true if the execution was successful, false otherwise.
      */
     boolean execute(@NotNull CommandSender sender, @NotNull T target, @NotNull String alias, @NotNull String[] arguments);
 
@@ -35,11 +35,11 @@ public interface TargetCommand<T> {
      * This method gets only called if the {@link CommandSender} is permitted to perform this command.
      * The implementation is therefore not required to test the permission for the given {@code sender}.
      *
-     * @param sender the source who tab-completed the command
-     * @param target the target object for the command
-     * @param alias the alias used for the command
+     * @param sender the source who tab-completed the command.
+     * @param target the target object for the command.
+     * @param alias the alias used for the command.
      * @param arguments the passed arguments to the command, including the last partial argument to be completed.
-     * @return a list of tab-completions for the given arguments
+     * @return a list of tab-completions for the given arguments.
      */
     @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull T target, @NotNull String alias, @NotNull String[] arguments);
 

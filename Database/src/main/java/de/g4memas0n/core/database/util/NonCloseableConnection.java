@@ -15,7 +15,7 @@ public class NonCloseableConnection implements Connection {
     private final Connection delegate;
 
     /**
-     * Construct a wrapper around the given {@link Connection}.
+     * Construct a wrapper around the specified {@link Connection}.
      * @param delegate the connection to wrap
      */
     public NonCloseableConnection(@NotNull Connection delegate) {

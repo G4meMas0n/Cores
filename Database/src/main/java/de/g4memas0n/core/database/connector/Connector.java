@@ -4,7 +4,6 @@ import de.g4memas0n.core.database.StatementProcessor;
 import org.jetbrains.annotations.NotNull;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.sql.Wrapper;
 import java.util.Properties;
 
@@ -16,25 +15,31 @@ public interface Connector extends Wrapper {
 
     /**
      * Gets the vendor name of the connector implementation.
-     * @return the database vendor name
+     * @return the database vendor name.
      */
     @NotNull String getVendorName();
 
     /**
+     * Gets the statement processor for the connector implementation.
+     * @return the statement processor.
+     */
+    @NotNull StatementProcessor getStatementProcessor();
+
+    /**
      * Gets whether this connector connects to a remote database server.
-     * @return true, if it is a remote database connector
+     * @return true, if it is a remote database connector.
      */
     boolean isRemote();
 
     /**
      * Gets whether this connector has been shut down or not.
-     * @return true, if the connector is shut down
+     * @return true, if the connector is shut down.
      */
     boolean isShutdown();
 
     /**
-     * Configures the database connector with the given properties.
-     * @param properties the driver or data source properties
+     * Configures the database connector with the specified properties.
+     * @param properties the driver or data source properties.
      */
     void configure(@NotNull Properties properties);
 
@@ -44,8 +49,8 @@ public interface Connector extends Wrapper {
     void shutdown();
 
     /**
-     * Attempts to close the given connection to the database.
-     * @param connection the connection to close
+     * Attempts to close the specified connection to the database.
+     * @param connection the connection to close.
      */
     default void closeConnection(@NotNull Connection connection) {
         try (Connection closeable = connection) {
@@ -58,23 +63,7 @@ public interface Connector extends Wrapper {
     /**
      * Attempts to establish a connection to the database.
      * @return a connection to the database.
-     * @throws SQLException if a database error occurs
+     * @throws SQLException if a database error occurs.
      */
     @NotNull Connection getConnection() throws SQLException;
-
-    /**
-     * Gets the statement processor for this connector.
-     * @return the statement processor.
-     */
-    @NotNull StatementProcessor getStatementProcessor();
-
-    /**
-     * Attempts to get the current timestamp from the database.<br>
-     * Note that the default implementation uses the current system milliseconds to get the timestamp.
-     * @return the current database or system timestamp
-     * @throws SQLException if a database error occurs
-     */
-    default @NotNull Timestamp getTimestamp() throws SQLException {
-        return new Timestamp(System.currentTimeMillis());
-    }
 }

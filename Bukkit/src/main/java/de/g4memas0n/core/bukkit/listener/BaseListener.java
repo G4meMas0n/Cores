@@ -10,7 +10,7 @@ import java.util.logging.Logger;
 
 /**
  * A base listener class to extend for listening to bukkit events.
- * @param <P> the main class of the plugin
+ * @param <P> the main class of the plugin.
  */
 @SuppressWarnings("unused")
 public abstract class BaseListener<P extends JavaPlugin> implements Listener {
@@ -26,60 +26,55 @@ public abstract class BaseListener<P extends JavaPlugin> implements Listener {
     protected P plugin;
 
     /**
-     * Checks whether the listener is registered to bukkit.
-     * @return true if the listener is registered, false otherwise
+     * Checks whether the listener is registered.
+     * @return true if the listener is currently registered, false otherwise.
      */
     public boolean isRegistered() {
-        return plugin != null;
+        return this.plugin != null;
     }
 
     /**
      * Registers the implementing listener to bukkit.
-     * @param plugin the instance to the plugin main class
-     * @return true if it has been registered, false otherwise
+     * @param plugin the instance to the plugin main class.
+     * @return true if it has been registered, false otherwise.
      */
     public boolean register(@NotNull P plugin) {
-        if (!isRegistered()) {
-            // Configure logger to use the plugin logger if not already configured
-            if (logger.getParent() == null) {
-                logger.setParent(plugin.getLogger());
-                logger.setUseParentHandlers(true);
-            }
-
-            this.plugin = plugin;
-            plugin.getServer().getPluginManager().registerEvents(this, plugin);
-            return true;
+        if (this.plugin != null) return false;
+        // Configure logger to use the plugin logger if not already configured
+        if (logger.getParent() == null) {
+            logger.setParent(plugin.getLogger());
+            logger.setUseParentHandlers(true);
         }
-        return false;
+
+        plugin.getServer().getPluginManager().registerEvents(this, plugin);
+        this.plugin = plugin;
+        return true;
     }
 
     /**
      * Unregisters the implementing listener from bukkit.
-     * @param plugin the instance to the plugin main class
-     * @return true if it has been unregistered, false otherwise
+     * @param plugin the instance to the plugin main class.
+     * @return true if it has been unregistered, false otherwise.
      */
     public boolean unregister(@NotNull P plugin) {
-        if (isRegistered()) {
-            HandlerList.unregisterAll(this);
-            this.plugin = null;
-            return true;
-        }
-        return false;
+        if (this.plugin == null) return false;
+        HandlerList.unregisterAll(this);
+        this.plugin = null;
+        return true;
     }
 
     @Override
     public @NotNull String toString() {
         StringBuilder events = new StringBuilder();
         EventHandler annotation;
-
         for (Method method : getClass().getMethods()) {
             annotation = method.getAnnotation(EventHandler.class);
             if (annotation != null && method.getParameterCount() == 1) {
-                events.append("{class='").append(method.getParameterTypes()[0].getSimpleName()).append("', ");
+                events.append("{class='").append(method.getParameterTypes()[0].getSimpleName()).append("',");
                 events.append("priority='").append(annotation.priority()).append("'},");
             }
         }
 
-        return "Listener{name='" + getClass().getSimpleName() + "', events=[" + events.deleteCharAt(events.length()) + "]}";
+        return getClass().getSimpleName() + "{events=[" + events.deleteCharAt(events.length()) + "]}";
     }
 }

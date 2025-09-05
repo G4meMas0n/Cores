@@ -54,7 +54,7 @@ public abstract class FlatFileConnector implements Connector {
     }
 
     /**
-     * Creates a new jdbc-url for the given database path.
+     * Creates a new jdbc-url for the specified database path.
      * @param path the path to the flat-file database.
      * @return the created jdbc-url.
      */
@@ -65,7 +65,7 @@ public abstract class FlatFileConnector implements Connector {
         if (isShutdown()) {
             throw new SQLException("Connector not configured or shut down");
         }
-        return DriverManager.getConnection(url, properties);
+        return DriverManager.getConnection(this.url, this.properties);
     }
 
     @Override

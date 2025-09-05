@@ -9,6 +9,11 @@ import org.jetbrains.annotations.NotNull;
 public interface StatementProcessor {
 
     /**
+     * A pre-defined statement processor that returns the statement without any modifications.
+     */
+    @NotNull StatementProcessor IDENTITY_PROCESSOR = statement -> statement;
+
+    /**
      * A pre-defined statement processor that replaces apostrophes with backticks.
      * Used in MySQL, MariaDB and SQLite.
      */

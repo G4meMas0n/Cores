@@ -19,7 +19,7 @@ public class H2Connector extends FlatFileConnector {
             .replace("LIKE", "ILIKE");
 
     /**
-     * Constructs a H2 database connector.
+     * Constructs an H2 database connector.
      * @param path the path to the database file.
      * @see FlatFileConnector
      */

@@ -38,9 +38,9 @@ public class YamlConfig extends YamlConfiguration {
 
     /**
      * Deletes the yaml configuration file at the given path.
-     * @param path the path to the config to delete
-     * @throws FileNotFoundException if the file does not exist
-     * @throws IOException if an I/O error occurs
+     * @param path the path to the config to delete.
+     * @throws FileNotFoundException if the file does not exist.
+     * @throws IOException if an I/O error occurs.
      */
     public void delete(@NotNull Path path) throws IOException {
         logger.fine("Deleting config file " + path.getFileName());
@@ -59,9 +59,9 @@ public class YamlConfig extends YamlConfiguration {
      * Loads the file of the yaml configuration.<p>
      * If the file does not exist and the plugin jar contains a template file, a new file will be created based on the
      * found template.
-     * @param path the path to load the config from
-     * @throws FileNotFoundException if the file does not exist
-     * @throws IOException if an I/O error occurs
+     * @param path the path to load the config from.
+     * @throws FileNotFoundException if the file does not exist.
+     * @throws IOException if an I/O error occurs.
      */
     public void load(@NotNull Path path) throws IOException {
         String template = path.getFileName().toString();
@@ -103,8 +103,8 @@ public class YamlConfig extends YamlConfiguration {
 
     /**
      * Saves the file of the yaml configuration.
-     * @param path the path to save the config to
-     * @throws IOException if an I/O error occurs
+     * @param path the path to save the config to.
+     * @throws IOException if an I/O error occurs.
      */
     public void save(@NotNull Path path) throws IOException {
         logger.fine("Saving config file " + path.getFileName());
@@ -125,8 +125,8 @@ public class YamlConfig extends YamlConfiguration {
      * <p>
      * If the BigDecimal does not exist but a default value has been specified, this will return the default value. If
      * the BigDecimal does not exist and no default value was specified, this will return null.
-     * @param path the path of the BigDecimal to get
-     * @return the requested BigDecimal
+     * @param path the path of the BigDecimal to get.
+     * @return the requested BigDecimal.
      */
     @Nullable
     public BigDecimal getBigDecimal(@NotNull String path) {
@@ -138,9 +138,9 @@ public class YamlConfig extends YamlConfiguration {
      * <p>
      * If the BigDecimal does not exist then the specified default value will be returned regardless of if a default
      * has been identified in the root Configuration.
-     * @param path the path of the BigDecimal to get
-     * @param def the default value to return if the path is not found or is not a BigDecimal
-     * @return the requested BigDecimal
+     * @param path the path of the BigDecimal to get.
+     * @param def the default value to return if the path is not found or is not a BigDecimal.
+     * @return the requested BigDecimal.
      */
     @Contract("_, !null -> !null")
     @Nullable
@@ -153,9 +153,9 @@ public class YamlConfig extends YamlConfiguration {
      * <p>
      * If the BigDecimal does not exist but a default value has been specified, this will return the default value. If
      * the BigDecimal does not exist and no default value was specified, this will return null.
-     * @param section the section of the BigDecimal to get
-     * @param path the path of the BigDecimal to get
-     * @return the requested BigDecimal
+     * @param section the section of the BigDecimal to get.
+     * @param path the path of the BigDecimal to get.
+     * @return the requested BigDecimal.
      */
     @Nullable
     public BigDecimal getBigDecimal(@NotNull ConfigurationSection section, @NotNull String path) {
@@ -167,10 +167,10 @@ public class YamlConfig extends YamlConfiguration {
      * <p>
      * If the BigDecimal does not exist then the specified default value will be returned regardless of if a default
      * has been identified in the root Configuration.
-     * @param section the section of the BigDecimal to get
-     * @param path the path of the BigDecimal to get
-     * @param def the default value to return if the path is not found or is not a BigDecimal
-     * @return the requested BigDecimal
+     * @param section the section of the BigDecimal to get.
+     * @param path the path of the BigDecimal to get.
+     * @param def the default value to return if the path is not found or is not a BigDecimal.
+     * @return the requested BigDecimal.
      */
     @Contract("_, _, !null -> !null")
     @Nullable
@@ -194,8 +194,8 @@ public class YamlConfig extends YamlConfiguration {
      * <p>
      * If the Locale does not exist but a default value has been specified, this will return the default value. If
      * the Locale does not exist and no default value was specified, this will return null.
-     * @param path the path of the Locale to get
-     * @return the requested Locale
+     * @param path the path of the Locale to get.
+     * @return the requested Locale.
      */
     @Nullable
     public Locale getLocale(@NotNull String path) {
@@ -207,9 +207,9 @@ public class YamlConfig extends YamlConfiguration {
      * <p>
      * If the Locale does not exist then the specified default value will be returned regardless of if a default
      * has been identified in the root Configuration.
-     * @param path the path of the Locale to get
-     * @param def the default value to return if the path is not found or is not a Locale
-     * @return the requested Locale
+     * @param path the path of the Locale to get.
+     * @param def the default value to return if the path is not found or is not a Locale.
+     * @return the requested Locale.
      */
     @Contract("_, !null -> !null")
     @Nullable
@@ -222,9 +222,9 @@ public class YamlConfig extends YamlConfiguration {
      * <p>
      * If the Locale does not exist but a default value has been specified, this will return the default value. If
      * the Locale does not exist and no default value was specified, this will return null.
-     * @param section the section of the Locale to get
-     * @param path the path of the Locale to get
-     * @return the requested Locale
+     * @param section the section of the Locale to get.
+     * @param path the path of the Locale to get.
+     * @return the requested Locale.
      */
     @Nullable
     public Locale getLocale(@NotNull ConfigurationSection section, @NotNull String path) {
@@ -236,10 +236,10 @@ public class YamlConfig extends YamlConfiguration {
      * <p>
      * If the Locale does not exist then the specified default value will be returned regardless of if a default
      * has been identified in the root Configuration.
-     * @param section the section of the Locale to get
-     * @param path the path of the Locale to get
-     * @param def the default value to return if the path is not found or is not a Locale
-     * @return the requested Locale
+     * @param section the section of the Locale to get.
+     * @param path the path of the Locale to get.
+     * @param def the default value to return if the path is not found or is not a Locale.
+     * @return the requested Locale.
      */
     @Contract("_, _, !null -> !null")
     @Nullable
@@ -264,8 +264,8 @@ public class YamlConfig extends YamlConfiguration {
      * <p>
      * If the Properties do not exist but a default value has been specified, this will return the default value. If
      * the Properties do not exist and no default value was specified, this will return null.
-     * @param path the path of the Properties to get
-     * @return the requested Properties
+     * @param path the path of the Properties to get.
+     * @return the requested Properties.
      */
     @Nullable
     public Properties getProperties(@NotNull String path) {
@@ -277,9 +277,9 @@ public class YamlConfig extends YamlConfiguration {
      * <p>
      * If the Properties do not exist then the specified default value will be returned regardless of if a default
      * has been identified in the root Configuration.
-     * @param path the path of the Properties to get
-     * @param def the default value to return if the path is not found or contains no Properties
-     * @return the requested Properties
+     * @param path the path of the Properties to get.
+     * @param def the default value to return if the path is not found or contains no Properties.
+     * @return the requested Properties.
      */
     @Contract("_, !null -> !null")
     @Nullable
@@ -292,9 +292,9 @@ public class YamlConfig extends YamlConfiguration {
      * <p>
      * If the Properties do not exist but a default value has been specified, this will return the default value. If
      * the Properties do not exist and no default value was specified, this will return null.
-     * @param section the section of the Properties to get
-     * @param path the path of the Properties to get
-     * @return the requested Properties
+     * @param section the section of the Properties to get.
+     * @param path the path of the Properties to get.
+     * @return the requested Properties.
      */
     @Nullable
     public Properties getProperties(@NotNull ConfigurationSection section, @NotNull String path) {
@@ -306,10 +306,10 @@ public class YamlConfig extends YamlConfiguration {
      * <p>
      * If the Properties do not exist then the specified default value will be returned regardless of if a default
      * has been identified in the root Configuration.
-     * @param section the section of the Properties to get
-     * @param path the path of the Properties to get
-     * @param def the default value to return if the path is not found or contains no Properties
-     * @return the requested Properties
+     * @param section the section of the Properties to get.
+     * @param path the path of the Properties to get.
+     * @param def the default value to return if the path is not found or contains no Properties.
+     * @return the requested Properties.
      */
     @Contract("_, _, !null -> !null")
     @Nullable
@@ -334,10 +334,10 @@ public class YamlConfig extends YamlConfiguration {
      * <p>
      * If the Object does not exist but a default value has been specified, this will return the default value. If
      * the Object does not exist and no default value was specified, this will return null.
-     * @param path the path of the Object to get
-     * @param clazz the type of {@link java.lang.Enum}
-     * @return the requested Enum object
-     * @param <E> the type of {@link java.lang.Enum}
+     * @param path the path of the Object to get.
+     * @param clazz the type of {@link java.lang.Enum}.
+     * @return the requested Enum object.
+     * @param <E> the type of {@link java.lang.Enum}.
      */
     @Nullable
     public <E extends Enum<E>> E getEnum(@NotNull String path, @NotNull Class<E> clazz) {
@@ -349,11 +349,11 @@ public class YamlConfig extends YamlConfiguration {
      * <p>
      * If the Object does not exist then the specified default value will be returned regardless of if a default
      * has been identified in the root Configuration.
-     * @param path the path of the Object to get
-     * @param clazz the type of {@link java.lang.Enum}
-     * @param def  the default object to return if the object is not present at the path
-     * @return the requested Enum object
-     * @param <E> the type of {@link java.lang.Enum}
+     * @param path the path of the Object to get.
+     * @param clazz the type of {@link java.lang.Enum}.
+     * @param def  the default object to return if the object is not present at the path.
+     * @return the requested Enum object.
+     * @param <E> the type of {@link java.lang.Enum}.
      */
     @Contract("_, _, !null -> !null")
     @Nullable
@@ -366,11 +366,11 @@ public class YamlConfig extends YamlConfiguration {
      * <p>
      * If the Object does not exist but a default value has been specified, this will return the default value. If
      * the Object does not exist and no default value was specified, this will return null.
-     * @param section the section of the Object to get
-     * @param path the path of the Object to get
-     * @param clazz the type of {@link java.lang.Enum}
-     * @return the requested Enum object
-     * @param <E> the type of {@link java.lang.Enum}
+     * @param section the section of the Object to get.
+     * @param path the path of the Object to get.
+     * @param clazz the type of {@link java.lang.Enum}.
+     * @return the requested Enum object.
+     * @param <E> the type of {@link java.lang.Enum}.
      */
     @Nullable
     public <E extends Enum<E>> E getEnum(@NotNull ConfigurationSection section, @NotNull String path,
@@ -383,12 +383,12 @@ public class YamlConfig extends YamlConfiguration {
      * <p>
      * If the Object does not exist then the specified default value will be returned regardless of if a default
      * has been identified in the root Configuration.
-     * @param section the section of the Object to get
-     * @param path the path of the Object to get
-     * @param clazz the type of {@link java.lang.Enum}
-     * @param def  the default object to return if the object is not present at the path
-     * @return the requested Enum object
-     * @param <E> the type of {@link java.lang.Enum}
+     * @param section the section of the Object to get.
+     * @param path the path of the Object to get.
+     * @param clazz the type of {@link java.lang.Enum}.
+     * @param def  the default object to return if the object is not present at the path.
+     * @return the requested Enum object.
+     * @param <E> the type of {@link java.lang.Enum}.
      */
     @Contract("_, _, _, !null -> !null")
     @Nullable
