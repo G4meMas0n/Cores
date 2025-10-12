@@ -39,7 +39,7 @@ public abstract class FlatFileConnector implements Connector {
 
     @Override
     public boolean isShutdown() {
-        return this.properties == null;
+        return properties == null;
     }
 
     @Override
@@ -50,7 +50,7 @@ public abstract class FlatFileConnector implements Connector {
 
     @Override
     public void shutdown() {
-        this.properties = null;
+        properties = null;
     }
 
     /**
@@ -65,7 +65,7 @@ public abstract class FlatFileConnector implements Connector {
         if (isShutdown()) {
             throw new SQLException("Connector not configured or shut down");
         }
-        return DriverManager.getConnection(this.url, this.properties);
+        return DriverManager.getConnection(url, properties);
     }
 
     @Override

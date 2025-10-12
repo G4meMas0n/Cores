@@ -14,9 +14,13 @@ import java.util.logging.Level;
 @SuppressWarnings("unused")
 public class H2Connector extends FlatFileConnector {
 
-    private static final StatementProcessor PROCESSOR = statement -> statement
-            .replace('\'', '`')
-            .replace("LIKE", "ILIKE");
+    /**
+     * A pre-defined statement processor that is based on the backtick processor and replaces the case-sensitive 'LIKE'
+     * operator with the case-insensitive operator 'ILIKE'.
+     */
+    public static final StatementProcessor H2_PROCESSOR = StatementProcessor.BACKTICK_PROCESSOR.compose(
+            statement -> statement.replaceAll("(?i)LIKE", "ILIKE")
+    );
 
     /**
      * Constructs an H2 database connector.
@@ -34,7 +38,7 @@ public class H2Connector extends FlatFileConnector {
 
     @Override
     public @NotNull StatementProcessor getStatementProcessor() {
-        return PROCESSOR;
+        return H2_PROCESSOR;
     }
 
     @Override

@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
  * A functional interface for processing sql statement.
  */
 @FunctionalInterface
+@SuppressWarnings("unused")
 public interface StatementProcessor {
 
     /**
@@ -14,16 +15,16 @@ public interface StatementProcessor {
     @NotNull StatementProcessor IDENTITY_PROCESSOR = statement -> statement;
 
     /**
-     * A pre-defined statement processor that replaces apostrophes with backticks.
+     * A pre-defined statement processor that replaces literal enquotes with backticks.
      * Used in MySQL, MariaDB and SQLite.
      */
-    @NotNull StatementProcessor BACKTICK_PROCESSOR = statement -> statement.replace('\'', '`');
+    @NotNull StatementProcessor BACKTICK_PROCESSOR = statement -> statement.replaceAll("\"", "`");
 
     /**
-     * A pre-defined statement processor that replaces apostrophes with quotes.
+     * A pre-defined statement processor that replaces literal enquotes with quotes.
      * Used in PostgreSQL.
      */
-    @NotNull StatementProcessor QUOTE_PROCESSOR = statement -> statement.replace('\'', '"');
+    @NotNull StatementProcessor QUOTE_PROCESSOR = statement -> statement.replaceAll("`", "\"");
 
     /**
      * Processes the specified sql statement to replace the standard sql syntax with a vendor-specific SQL syntax.

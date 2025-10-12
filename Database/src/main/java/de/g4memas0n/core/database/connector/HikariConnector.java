@@ -60,8 +60,8 @@ public abstract class HikariConnector implements Connector {
 
     @Override
     public void shutdown() {
-        if (this.dataSource != null) {
-            this.dataSource.close();
+        if (dataSource != null) {
+            dataSource.close();
         }
     }
 
@@ -70,7 +70,7 @@ public abstract class HikariConnector implements Connector {
         if (isShutdown()) {
             throw new SQLException("Datasource not configured or shut down");
         }
-        return this.dataSource.getConnection();
+        return dataSource.getConnection();
     }
 
     @Override
@@ -84,7 +84,7 @@ public abstract class HikariConnector implements Connector {
         if (Connector.class.equals(type)) {
             return (T) this;
         } else if (HikariDataSource.class.isAssignableFrom(type) || DataSource.class.isAssignableFrom(type)) {
-            return (T) this.dataSource;
+            return (T) dataSource;
         }
         throw new SQLException("Cannot unwrap to " + type);
     }
