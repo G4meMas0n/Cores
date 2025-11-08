@@ -1,6 +1,6 @@
-package de.g4memas0n.core.database.connector;
+package de.g4memas0n.core.sql.connector;
 
-import de.g4memas0n.core.database.StatementProcessor;
+import de.g4memas0n.core.sql.StatementProcessor;
 import org.jetbrains.annotations.NotNull;
 import java.nio.file.Path;
 import java.util.Properties;
@@ -22,6 +22,8 @@ public class H2Connector extends FlatFileConnector {
             statement -> statement.replaceAll("(?i)LIKE", "ILIKE")
     );
 
+    private StatementProcessor processor;
+
     /**
      * Constructs an H2 database connector.
      * @param path the path to the database file.
@@ -38,7 +40,13 @@ public class H2Connector extends FlatFileConnector {
 
     @Override
     public @NotNull StatementProcessor getStatementProcessor() {
+        if (processor != null) return processor;
         return H2_PROCESSOR;
+    }
+
+    @Override
+    public void setStatementProcessor(@NotNull StatementProcessor processor) {
+        this.processor = processor.equals(H2_PROCESSOR) ? null : processor;
     }
 
     @Override

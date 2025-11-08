@@ -1,4 +1,4 @@
-package de.g4memas0n.core.database.util;
+package de.g4memas0n.core.sql.util;
 
 import org.jetbrains.annotations.NotNull;
 import java.io.BufferedReader;

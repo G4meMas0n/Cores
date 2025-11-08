@@ -1,4 +1,4 @@
-package de.g4memas0n.core.database.connector;
+package de.g4memas0n.core.sql.connector;
 
 import org.jetbrains.annotations.NotNull;
 import java.util.Properties;
@@ -28,13 +28,13 @@ public class MariaDBConnector extends MySQLConnector {
             throw new RuntimeException("driver not available", ex);
         }
 
-        properties.setProperty("driverClassName", driver.getName());
         properties.remove("dataSourceClassName");
-
-        // Setup jdbcUrl by using the data source properties if not already set
-        if (properties.getProperty("jdbcUrl") == null) {
-            properties.setProperty("jdbcUrl", createUrl(properties));
+        properties.put("driverClassName", driver.getName());
+        if (properties.containsKey("jdbcUrl")) {
+            // Setup jdbcUrl by using the properties if not already set
+            properties.put("jdbcUrl", createUrl(properties));
         }
+
         super.configure(properties);
     }
 }

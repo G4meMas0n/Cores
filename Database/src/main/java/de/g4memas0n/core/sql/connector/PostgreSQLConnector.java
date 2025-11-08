@@ -1,6 +1,6 @@
-package de.g4memas0n.core.database.connector;
+package de.g4memas0n.core.sql.connector;
 
-import de.g4memas0n.core.database.StatementProcessor;
+import de.g4memas0n.core.sql.StatementProcessor;
 import org.jetbrains.annotations.NotNull;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -13,6 +13,8 @@ import java.util.logging.Level;
 @SuppressWarnings("unused")
 public class PostgreSQLConnector extends HikariConnector {
 
+    private StatementProcessor processor;
+
     @Override
     public @NotNull String getVendorName() {
         return "PostgreSQL";
@@ -20,7 +22,13 @@ public class PostgreSQLConnector extends HikariConnector {
 
     @Override
     public @NotNull StatementProcessor getStatementProcessor() {
+        if (processor != null) return processor;
         return StatementProcessor.QUOTE_PROCESSOR;
+    }
+
+    @Override
+    public void setStatementProcessor(@NotNull StatementProcessor processor) {
+        this.processor = processor.equals(StatementProcessor.QUOTE_PROCESSOR) ? null : processor;
     }
 
     @Override
@@ -33,8 +41,8 @@ public class PostgreSQLConnector extends HikariConnector {
             throw new RuntimeException("driver not available", ex);
         }
 
-        properties.setProperty("dataSourceClassName", dataSource.getName());
         properties.remove("driverClassName");
+        properties.put("dataSourceClassName", dataSource.getName());
         super.configure(properties);
     }
 }

@@ -1,4 +1,4 @@
-package de.g4memas0n.core.database.connector;
+package de.g4memas0n.core.sql.connector;
 
 import org.jetbrains.annotations.NotNull;
 import java.nio.file.Path;
@@ -30,11 +30,6 @@ public abstract class FlatFileConnector implements Connector {
      */
     public FlatFileConnector(@NotNull Path path) {
         this.path = path.toAbsolutePath();
-    }
-
-    @Override
-    public boolean isRemote() {
-        return false;
     }
 
     @Override

@@ -1,4 +1,4 @@
-package de.g4memas0n.core.database;
+package de.g4memas0n.core.sql;
 
 import org.jetbrains.annotations.NotNull;
 

@@ -1,4 +1,4 @@
-package de.g4memas0n.core.database.connector;
+package de.g4memas0n.core.sql.connector;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -22,12 +22,8 @@ public abstract class HikariConnector implements Connector {
      * The logger instance intended to be used by all implemented hikari connectors.
      */
     public static Logger logger = Logger.getLogger(HikariConnector.class.getName());
-    private HikariDataSource dataSource;
 
-    @Override
-    public boolean isRemote() {
-        return true;
-    }
+    private HikariDataSource dataSource;
 
     @Override
     public boolean isShutdown() {
@@ -35,25 +31,24 @@ public abstract class HikariConnector implements Connector {
     }
 
     @Override
-    public void configure(@NotNull Properties properties) {
+    public void configure(@NotNull Properties credentials) {
         HikariConfig config = new HikariConfig();
-        Properties configProperties = new Properties();
+        Properties properties = new Properties();
 
         Set<String> propertyNames = PropertyElf.getPropertyNames(config.getClass());
-        properties.forEach((key, value) -> {
-            String propertyName = key.toString();
-            if (!propertyName.startsWith("dataSource.")) {
-                if (propertyNames.contains(propertyName)) {
-                    // The config has this property
-                    configProperties.put(key, value);
-                } else {
-                    // The config does not have this property, assume it belongs to the data source
-                    configProperties.put("dataSource." + key, value);
-                }
+        credentials.forEach((key, value) -> {
+            String property = key.toString();
+            if (property.startsWith("dataSource.")) {
+                properties.put(key, value);
+            } else if (propertyNames.contains(property)) {
+                properties.put(key, value);
+            } else {
+                // The config does not have this property, assume it belongs to the data source
+                properties.put("dataSource." + key, value);
             }
         });
 
-        PropertyElf.setTargetFromProperties(config, configProperties);
+        PropertyElf.setTargetFromProperties(config, properties);
         config.setAutoCommit(true);
         this.dataSource = new HikariDataSource(config);
     }
@@ -68,7 +63,7 @@ public abstract class HikariConnector implements Connector {
     @Override
     public @NotNull Connection getConnection() throws SQLException {
         if (isShutdown()) {
-            throw new SQLException("Datasource not configured or shut down");
+            throw new SQLException("DataSource not configured or already shut down");
         }
         return dataSource.getConnection();
     }

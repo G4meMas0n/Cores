@@ -1,6 +1,6 @@
-package de.g4memas0n.core.database.connector;
+package de.g4memas0n.core.sql.connector;
 
-import de.g4memas0n.core.database.StatementProcessor;
+import de.g4memas0n.core.sql.StatementProcessor;
 import org.jetbrains.annotations.NotNull;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -13,6 +13,8 @@ import java.util.logging.Level;
 @SuppressWarnings("unused")
 public class MySQLConnector extends HikariConnector {
 
+    private StatementProcessor processor;
+
     @Override
     public @NotNull String getVendorName() {
         return "MySQL";
@@ -20,7 +22,13 @@ public class MySQLConnector extends HikariConnector {
 
     @Override
     public @NotNull StatementProcessor getStatementProcessor() {
+        if (processor != null) return processor;
         return StatementProcessor.BACKTICK_PROCESSOR;
+    }
+
+    @Override
+    public void setStatementProcessor(@NotNull StatementProcessor processor) {
+        this.processor = processor.equals(StatementProcessor.BACKTICK_PROCESSOR) ? null : processor;
     }
 
     @Override
@@ -42,12 +50,11 @@ public class MySQLConnector extends HikariConnector {
             }
         }
 
-        properties.setProperty("driverClassName", driver.getName());
         properties.remove("dataSourceClassName");
-
-        // Setup jdbcUrl by using the data source properties if not already set
-        if (properties.getProperty("jdbcUrl") == null) {
-            properties.setProperty("jdbcUrl", createUrl(properties));
+        properties.put("driverClassName", driver.getName());
+        if (properties.containsKey("jdbcUrl")) {
+            // Setup jdbcUrl by using the properties if not already set
+            properties.put("jdbcUrl", createUrl(properties));
         }
 
         /*
@@ -73,12 +80,16 @@ public class MySQLConnector extends HikariConnector {
      * @return the created jdbc-url.
      */
     protected @NotNull String createUrl(@NotNull Properties properties) {
-        if (!properties.contains("serverName") || !properties.contains("databaseName")) {
-            throw new IllegalArgumentException("serverName and databaseName required");
+        String serverName = properties.getProperty("serverName");
+        if (serverName == null || serverName.isEmpty()) {
+            throw new IllegalArgumentException("Property 'serverName' must ne provided");
         }
 
         String databaseName = properties.getProperty("databaseName");
-        String serverName = properties.getProperty("serverName");
+        if (databaseName == null || databaseName.isBlank()) {
+            throw new IllegalArgumentException("Property 'databaseName' must be provided");
+        }
+
         String portNumber = properties.getProperty("portNumber");
         if (portNumber == null || portNumber.equals("0")) portNumber = "3306";
         return "jdbc:" + getVendorName().toLowerCase() + "://" + serverName + ":" + portNumber + "/" + databaseName;

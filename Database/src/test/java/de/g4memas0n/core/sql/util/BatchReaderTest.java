@@ -1,4 +1,4 @@
-package de.g4memas0n.core.database.util;
+package de.g4memas0n.core.sql.util;
 
 import org.junit.Assert;
 import org.junit.Test;

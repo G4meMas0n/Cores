@@ -1,6 +1,6 @@
-package de.g4memas0n.core.database.connector;
+package de.g4memas0n.core.sql.connector;
 
-import de.g4memas0n.core.database.StatementProcessor;
+import de.g4memas0n.core.sql.StatementProcessor;
 import org.jetbrains.annotations.NotNull;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -26,10 +26,10 @@ public interface Connector extends Wrapper {
     @NotNull StatementProcessor getStatementProcessor();
 
     /**
-     * Gets whether this connector connects to a remote database server.
-     * @return true, if it is a remote database connector.
+     * Sets the statement processor for the connector implementation.
+     * @param processor the new statement processor.
      */
-    boolean isRemote();
+    void setStatementProcessor(@NotNull StatementProcessor processor);
 
     /**
      * Gets whether this connector has been shut down or not.
