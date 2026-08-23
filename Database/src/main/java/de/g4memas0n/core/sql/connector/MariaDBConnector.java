@@ -13,9 +13,14 @@ import java.util.logging.Level;
 @SuppressWarnings("unused")
 public class MariaDBConnector extends MySQLConnector {
 
+    /**
+     * The official vendor name of the MariaDB database connector.
+     */
+    public static final String VENDOR_NAME = "MariaDB";
+
     @Override
     public @NotNull String getVendorName() {
-        return "MariaDB";
+        return VENDOR_NAME;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package de.g4memas0n.core.sql.connector;
 
 import de.g4memas0n.core.sql.StatementProcessor;
+import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -18,19 +19,7 @@ public interface Connector extends Wrapper {
      * @return the database vendor name.
      */
     @NotNull String getVendorName();
-
-    /**
-     * Gets the statement processor for the connector implementation.
-     * @return the statement processor.
-     */
-    @NotNull StatementProcessor getStatementProcessor();
-
-    /**
-     * Sets the statement processor for the connector implementation.
-     * @param processor the new statement processor.
-     */
-    void setStatementProcessor(@NotNull StatementProcessor processor);
-
+    
     /**
      * Gets whether this connector has been shut down or not.
      * @return true, if the connector is shut down.
@@ -49,6 +38,13 @@ public interface Connector extends Wrapper {
     void shutdown();
 
     /**
+     * Attempts to establish a connection to the database.
+     * @return a connection to the database.
+     * @throws SQLException if a database error occurs.
+     */
+    @NotNull Connection getConnection() throws SQLException;
+    
+    /**
      * Attempts to close the specified connection to the database.
      * @param connection the connection to close.
      */
@@ -61,9 +57,24 @@ public interface Connector extends Wrapper {
     }
 
     /**
-     * Attempts to establish a connection to the database.
-     * @return a connection to the database.
-     * @throws SQLException if a database error occurs.
+     * Gets the statement processor for the connector implementation.
+     * @return the statement processor.
      */
-    @NotNull Connection getConnection() throws SQLException;
+    @NotNull StatementProcessor getStatementProcessor();
+
+    /**
+     * Sets the statement processor for the connector implementation.
+     * @param processor the new statement processor.
+     */
+    void setStatementProcessor(@NotNull StatementProcessor processor);
+
+    /**
+     * Processes the specified sql statement based on the statement processor of the connector implementation.
+     * @param statement the SQL statement to process.
+     * @return the processed vendor-specific SQL statement.
+     * @see StatementProcessor#process(String) 
+     */
+    default @NotNull @Language("SQL") String processSQL(@NotNull @Language("SQL") String statement) {
+        return getStatementProcessor().process(statement);
+    }
 }

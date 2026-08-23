@@ -13,22 +13,15 @@ import java.util.logging.Level;
 @SuppressWarnings("unused")
 public class PostgreSQLConnector extends HikariConnector {
 
+    /**
+     * The official vendor name of the PostgreSQL database connector.
+     */
+    public static final String VENDOR_NAME = "PostgreSQL";
     private StatementProcessor processor;
 
     @Override
     public @NotNull String getVendorName() {
-        return "PostgreSQL";
-    }
-
-    @Override
-    public @NotNull StatementProcessor getStatementProcessor() {
-        if (processor != null) return processor;
-        return StatementProcessor.QUOTE_PROCESSOR;
-    }
-
-    @Override
-    public void setStatementProcessor(@NotNull StatementProcessor processor) {
-        this.processor = processor.equals(StatementProcessor.QUOTE_PROCESSOR) ? null : processor;
+        return VENDOR_NAME;
     }
 
     @Override
@@ -44,5 +37,16 @@ public class PostgreSQLConnector extends HikariConnector {
         properties.remove("driverClassName");
         properties.put("dataSourceClassName", dataSource.getName());
         super.configure(properties);
+    }
+
+    @Override
+    public @NotNull StatementProcessor getStatementProcessor() {
+        if (processor != null) return processor;
+        return StatementProcessor.QUOTE_PROCESSOR;
+    }
+
+    @Override
+    public void setStatementProcessor(@NotNull StatementProcessor processor) {
+        this.processor = processor.equals(StatementProcessor.QUOTE_PROCESSOR) ? null : processor;
     }
 }

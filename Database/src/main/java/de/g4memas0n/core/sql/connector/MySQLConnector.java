@@ -13,22 +13,15 @@ import java.util.logging.Level;
 @SuppressWarnings("unused")
 public class MySQLConnector extends HikariConnector {
 
+    /**
+     * The official vendor name of the MySQL database connector.
+     */
+    public static final String VENDOR_NAME = "MySQL";
     private StatementProcessor processor;
 
     @Override
     public @NotNull String getVendorName() {
-        return "MySQL";
-    }
-
-    @Override
-    public @NotNull StatementProcessor getStatementProcessor() {
-        if (processor != null) return processor;
-        return StatementProcessor.BACKTICK_PROCESSOR;
-    }
-
-    @Override
-    public void setStatementProcessor(@NotNull StatementProcessor processor) {
-        this.processor = processor.equals(StatementProcessor.BACKTICK_PROCESSOR) ? null : processor;
+        return VENDOR_NAME;
     }
 
     @Override
@@ -93,5 +86,16 @@ public class MySQLConnector extends HikariConnector {
         String portNumber = properties.getProperty("portNumber");
         if (portNumber == null || portNumber.equals("0")) portNumber = "3306";
         return "jdbc:" + getVendorName().toLowerCase() + "://" + serverName + ":" + portNumber + "/" + databaseName;
+    }
+
+    @Override
+    public @NotNull StatementProcessor getStatementProcessor() {
+        if (processor != null) return processor;
+        return StatementProcessor.BACKTICK_PROCESSOR;
+    }
+
+    @Override
+    public void setStatementProcessor(@NotNull StatementProcessor processor) {
+        this.processor = processor.equals(StatementProcessor.BACKTICK_PROCESSOR) ? null : processor;
     }
 }

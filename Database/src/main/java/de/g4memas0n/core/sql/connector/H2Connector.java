@@ -7,7 +7,7 @@ import java.util.Properties;
 import java.util.logging.Level;
 
 /**
- * A H2 database connector.
+ * An H2 database connector.
  * @see FlatFileConnector
  * @see Connector
  */
@@ -15,7 +15,12 @@ import java.util.logging.Level;
 public class H2Connector extends FlatFileConnector {
 
     /**
-     * A pre-defined statement processor that is based on the backtick processor and replaces the case-sensitive 'LIKE'
+     * The official vendor name of the H2 database connector.
+     */
+    public static final String VENDOR_NAME = "H2";
+
+    /**
+     * A pre-defined h2 statement processor that is based on the backtick processor and replaces the case-sensitive 'LIKE'
      * operator with the case-insensitive operator 'ILIKE'.
      */
     public static final StatementProcessor H2_PROCESSOR = StatementProcessor.BACKTICK_PROCESSOR.compose(
@@ -35,18 +40,7 @@ public class H2Connector extends FlatFileConnector {
 
     @Override
     public @NotNull String getVendorName() {
-        return "H2";
-    }
-
-    @Override
-    public @NotNull StatementProcessor getStatementProcessor() {
-        if (processor != null) return processor;
-        return H2_PROCESSOR;
-    }
-
-    @Override
-    public void setStatementProcessor(@NotNull StatementProcessor processor) {
-        this.processor = processor.equals(H2_PROCESSOR) ? null : processor;
+        return VENDOR_NAME;
     }
 
     @Override
@@ -64,5 +58,16 @@ public class H2Connector extends FlatFileConnector {
     @Override
     public @NotNull String createUrl(@NotNull Path path) {
         return "jdbc:h2:file:" + path;
+    }
+
+    @Override
+    public @NotNull StatementProcessor getStatementProcessor() {
+        if (processor != null) return processor;
+        return H2_PROCESSOR;
+    }
+
+    @Override
+    public void setStatementProcessor(@NotNull StatementProcessor processor) {
+        this.processor = processor.equals(H2_PROCESSOR) ? null : processor;
     }
 }

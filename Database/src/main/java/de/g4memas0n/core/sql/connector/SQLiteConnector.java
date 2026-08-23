@@ -14,6 +14,10 @@ import java.util.logging.Level;
 @SuppressWarnings("unused")
 public class SQLiteConnector extends FlatFileConnector {
 
+    /**
+     * The official vendor name of the SQLite database connector.
+     */
+    public static final String VENDOR_NAME = "SQLite";
     private StatementProcessor processor;
 
     /**
@@ -27,18 +31,7 @@ public class SQLiteConnector extends FlatFileConnector {
 
     @Override
     public @NotNull String getVendorName() {
-        return "SQLite";
-    }
-
-    @Override
-    public @NotNull StatementProcessor getStatementProcessor() {
-        if (processor != null) return processor;
-        return StatementProcessor.BACKTICK_PROCESSOR;
-    }
-
-    @Override
-    public void setStatementProcessor(@NotNull StatementProcessor processor) {
-        this.processor = processor.equals(StatementProcessor.BACKTICK_PROCESSOR) ? null : processor;
+        return VENDOR_NAME;
     }
 
     @Override
@@ -61,5 +54,16 @@ public class SQLiteConnector extends FlatFileConnector {
     @Override
     public @NotNull String createUrl(@NotNull Path path) {
         return "jdbc:sqlite:" + path;
+    }
+
+    @Override
+    public @NotNull StatementProcessor getStatementProcessor() {
+        if (processor != null) return processor;
+        return StatementProcessor.BACKTICK_PROCESSOR;
+    }
+
+    @Override
+    public void setStatementProcessor(@NotNull StatementProcessor processor) {
+        this.processor = processor.equals(StatementProcessor.BACKTICK_PROCESSOR) ? null : processor;
     }
 }
